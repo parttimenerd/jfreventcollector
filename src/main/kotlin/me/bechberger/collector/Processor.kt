@@ -1,12 +1,12 @@
 package me.bechberger.collector
 
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.text.DecimalFormat
 import jdk.jfr.EventType
 import jdk.jfr.consumer.RecordedEvent
 import jdk.jfr.consumer.RecordedObject
 import jdk.jfr.consumer.RecordingFile
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.text.DecimalFormat
 
 class Processor(val file: Path) {
 
