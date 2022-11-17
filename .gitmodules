@@ -1,0 +1,3 @@
+[submodule "samples/openjdk"]
+	path = samples/openjdk
+	url = git@github.com:openjdk/jdk
