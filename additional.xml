@@ -1,0 +1,10 @@
+<Metadata>
+
+    <Event name="ZThreadDebug">
+        <additionalDescription><![CDATA[Only valid for the ZGC.]]></additionalDescription>
+        <Field name="name">
+            The name of the GC runner
+        </Field>
+    </Event>
+
+</Metadata>

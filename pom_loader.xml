@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>jfreventcollector</artifactId>
+    <artifactId>jfreventcollection</artifactId>
     <groupId>me.bechberger</groupId>
-    <name>JFR Event Collector</name>
+    <name>JFR Event Collection</name>
 
     <version>${project.vversion}${project.suffix}</version>
     <url>https://github.com/parttimenerd/jfreventcollector</url>
@@ -29,7 +29,7 @@
         <url>https://github.com/parttimenerd/jfreventcollector.git</url>
     </scm>
     <inceptionYear>2022</inceptionYear>
-    <description>Contains tools to extract information on JFR events from the OpenJDK source code and JFR files.</description>
+    <description>Contains extended information on JFR events.</description>
 
 
     <properties>
@@ -51,7 +51,7 @@
     </repositories>
 
     <build>
-        <sourceDirectory>src/main/kotlin</sourceDirectory>
+        <sourceDirectory>src/main/kotlin/me/bechberger/collector/xml</sourceDirectory>
         <testSourceDirectory>src/test/kotlin</testSourceDirectory>
         <plugins>
             <plugin>

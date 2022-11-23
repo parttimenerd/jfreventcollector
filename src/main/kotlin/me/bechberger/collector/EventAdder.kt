@@ -13,6 +13,7 @@ import spoon.reflect.declaration.CtClass
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.io.path.writeText
 
 class AdderException(message: String) : RuntimeException(message)
 
@@ -90,6 +91,8 @@ class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.
     internal fun parseClass(sourcePath: Path, klass: CtClass<*>): Event {
         val event = Event()
         // add class level stuff
+        event.name = ""
+        event.category = ""
         klass.annotations.forEach { ann ->
             when (ann.name) {
                 "Name" -> event.name = ann.stringValue
@@ -244,10 +247,11 @@ fun main(args: Array<String>) {
     val sourcePath = Paths.get(args[1])
     val metadata = metadataPath.readXmlAs(me.bechberger.collector.xml.Metadata::class.java)
     val eventAdder = EventAdder(sourcePath, metadata)
-    val eventFiles = eventAdder.maybeEventFiles()
-    println("Found ${eventFiles.size} event files")
-    println("First file " + eventFiles.first())
-    println(eventAdder.process())
-    val file = eventFiles.first { it.name == "X509CertificateEvent.java" }
-    println(eventAdder.parseClass(file.toPath(), eventAdder.parse(file)!!))
+    val meta = eventAdder.process()
+    val out = args[args.size - 1]
+    if (out == "-") {
+        println(meta)
+    } else {
+        Paths.get(out).writeText(meta.toString())
+    }
 }
