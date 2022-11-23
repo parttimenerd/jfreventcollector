@@ -14,9 +14,9 @@ internal val kotlinXmlMapper = XmlMapper(
         setDefaultUseWrapper(false)
     }
 ).registerKotlinModule().enable(SerializationFeature.INDENT_OUTPUT)
-    .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
-    .enable(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT)
-    .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    .enable(DeserializationFeature.EAGER_DESERIALIZER_FETCH)
+    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+    .setSerializationInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
 
 fun <T> Path.readXmlAs(clazz: Class<T>): T = kotlinXmlMapper.readValue(this.toFile(), clazz)
 

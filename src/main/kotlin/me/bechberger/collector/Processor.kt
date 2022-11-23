@@ -8,6 +8,9 @@ import jdk.jfr.consumer.RecordedEvent
 import jdk.jfr.consumer.RecordedObject
 import jdk.jfr.consumer.RecordingFile
 
+/**
+ * Collect information for all events in a recording file
+ */
 class Processor(val file: Path) {
 
     val events = mutableMapOf<EventType, RecordedEvent>()
@@ -47,9 +50,9 @@ class Processor(val file: Path) {
         }
     }
 
-    fun process() {
+    fun process(): Processor {
         collect()
-        print()
+        return this
     }
 
     fun printType(obj: RecordedEvent) {
@@ -131,5 +134,5 @@ class Processor(val file: Path) {
 fun String.ident(ident: String) = this.split("\n").joinToString("\n") { "$ident$it" }
 
 fun main(args: Array<String>) {
-    Processor(Paths.get(args[0])).process()
+    Processor(Paths.get(args[0])).process().print()
 }

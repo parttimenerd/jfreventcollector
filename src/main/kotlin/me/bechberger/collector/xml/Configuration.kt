@@ -1,5 +1,9 @@
 package me.bechberger.collector.xml
 
+/**
+ * Contains the XML mapper classes for the JFR configuration file
+ */
+
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
@@ -14,6 +18,9 @@ class Configuration {
     lateinit var description: String
     lateinit var provider: String
 
+    var since: Int? = null
+    var until: Int? = null
+
     @JacksonXmlProperty(localName = "event")
     lateinit var events: List<EventConfiguration>
 
@@ -25,6 +32,12 @@ class Configuration {
     fun get(event: String): EventConfiguration? = eventMap[event]
 
     override fun toString() = objectToXml(this)
+
+    fun setSinceAndUntil(perVersion: List<Pair<Int, Configuration?>>) {
+        since = perVersion.firstOrNull { it.second != null }?.first
+        until = perVersion.lastOrNull { it.second != null }?.first
+        events.forEach { e -> e.setSinceAndUntil(perVersion.map { (v, c) -> c?.get(e.name) }) }
+    }
 }
 
 @JacksonXmlRootElement(localName = "event")
@@ -34,6 +47,12 @@ class EventConfiguration {
 
     @JacksonXmlProperty(localName = "setting")
     lateinit var settings: List<EventSetting>
+
+    @JacksonXmlProperty(isAttribute = true)
+    var since: Int? = null
+
+    @JacksonXmlProperty(isAttribute = true)
+    var until: Int? = null
 
     @get:JsonIgnore
     val settingMap: Map<String, EventSetting> by lazy {
@@ -45,6 +64,12 @@ class EventConfiguration {
     fun contains(event: String): Boolean = settingMap.containsKey(event)
 
     override fun toString() = objectToXml(this)
+
+    fun setSinceAndUntil(perVersion: List<EventConfiguration?>) {
+        since = perVersion.firstOrNull { it != null }?.since
+        until = perVersion.lastOrNull { it != null }?.until
+        settings.forEach { s -> s.setSinceAndUntil(perVersion.map { it?.get(s.name) }) }
+    }
 }
 
 @JacksonXmlRootElement(localName = "setting")
@@ -58,5 +83,16 @@ class EventSetting {
     @JacksonXmlProperty(isAttribute = true)
     var control: String? = null
 
+    @JacksonXmlProperty(isAttribute = true)
+    var since: Int? = null
+
+    @JacksonXmlProperty(isAttribute = true)
+    var until: Int? = null
+
     override fun toString() = objectToXml(this)
+
+    fun setSinceAndUntil(perVersion: List<EventSetting?>) {
+        since = perVersion.firstOrNull { it != null }?.since
+        until = perVersion.lastOrNull { it != null }?.until
+    }
 }
