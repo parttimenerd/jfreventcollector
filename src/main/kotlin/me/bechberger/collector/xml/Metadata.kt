@@ -121,6 +121,26 @@ class Metadata {
         }
     }
 
+    @get:JsonIgnore
+    private val typeCaches: MutableMap<MutableList<AbstractType<*>>, MutableMap<String, AbstractType<*>>> =
+        mutableMapOf()
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T : AbstractType<*>> getTypeCache(ts: MutableList<T>): MutableMap<String, T> {
+        return typeCaches.getOrPut(ts as MutableList<AbstractType<*>>) {
+            ts.associateBy { it.name }.toMutableMap()
+        } as MutableMap<String, T>
+    }
+
+    fun clearTypesCache() {
+        typeCaches.clear()
+    }
+
+    /** clear types cache if you change the source list after calling this method previously */
+    fun <T : AbstractType<*>> getSpecificType(name: String, source: MutableList<T>): T? {
+        return getTypeCache(source)[name]
+    }
+
     fun getEvent(name: String): Event? {
         return eventsCache.get(name) ?: run {
             val found = events.firstOrNull { it.name == name }
@@ -293,7 +313,7 @@ class Event() : Type<EventExample>() {
             internal || other.internal,
             throttle || other.throttle,
             cutoff || other.cutoff,
-            enabled && other.enabled,
+            other.enabled,
             period ?: other.period,
             (fields + other.fields).toMutableList(),
             (configurations + other.configurations).toMutableList(),
@@ -505,7 +525,7 @@ class Field {
     var struct: Boolean = false
 
     @JacksonXmlProperty(isAttribute = true)
-    var experimental: Boolean = true
+    var experimental: Boolean = false
 
     @JacksonXmlProperty(isAttribute = true)
     var transition: Transition? = null
