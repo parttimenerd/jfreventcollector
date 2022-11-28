@@ -209,12 +209,21 @@ class Event() : Type<EventExample>() {
     @JacksonXmlProperty(isAttribute = true)
     var description: String? = null
 
-    @JacksonXmlProperty(isAttribute = true)
-    var startTime: Boolean = false
+    /**
+     * Every event has a start time, the JFR
+     * startTime setting enables the duration property.
+     */
+    @JsonIgnore
+    val startTime: Boolean = true
+
+    /** has a duration field */
+    @JacksonXmlProperty(isAttribute = true, localName = "startTime")
+    var duration: Boolean = true
 
     @JacksonXmlProperty(isAttribute = true)
     var experimental: Boolean = false
 
+    /** has an eventThread property? */
     @JacksonXmlProperty(isAttribute = true)
     var thread: Boolean = false
 
@@ -255,7 +264,7 @@ class Event() : Type<EventExample>() {
         category: String = "",
         label: String = "",
         description: String? = null,
-        startTime: Boolean = false,
+        duration: Boolean = false,
         experimental: Boolean = false,
         thread: Boolean = false,
         stackTrace: Boolean = false,
@@ -275,7 +284,7 @@ class Event() : Type<EventExample>() {
         this.category = category
         this.label = label
         this.description = description
-        this.startTime = startTime
+        this.duration = duration
         this.experimental = experimental
         this.thread = thread
         this.stackTrace = stackTrace
@@ -306,7 +315,7 @@ class Event() : Type<EventExample>() {
             merge(category, other.category),
             merge(label, other.label),
             merge(description, other.description),
-            startTime || other.startTime,
+            duration || other.duration,
             experimental || other.experimental,
             thread || other.thread,
             stackTrace || other.stackTrace,

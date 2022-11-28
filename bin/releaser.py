@@ -340,7 +340,7 @@ def deploy_github():
 
 
 def deploy_maven(snapshot: bool = True):
-    print(f"Deploy {' snapshot' if snapshot else ''}")
+    print(f"Deploy{' snapshot' if snapshot else ''}")
     for suffix in ["", "_loader"]:
         pom = f"pom{suffix}.xml"
         cmd = f"mvn " \

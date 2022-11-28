@@ -95,11 +95,17 @@ class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.
         event.category = ""
         klass.annotations.forEach { ann ->
             when (ann.name) {
-                "Name" -> event.name = ann.stringValue
+                "Name" -> {
+                    val stringValue = ann.stringValue
+                    if ("." in stringValue && !stringValue.startsWith("jdk.")) {
+                        throw AdderException("Event name $stringValue does not start with jdk.")
+                    }
+                    event.name = stringValue.substringAfter("jdk.")
+                }
                 "Label" -> event.label = ann.stringValue
                 "Description" -> event.description = ann.stringValue
                 "Category" -> event.category = ann.stringArray.joinToString(", ")
-                "StartTime" -> event.startTime = ann.booleanValue
+                "StartTime" -> event.duration = ann.booleanValue
                 "Experimental" -> event.experimental = true
                 "Thread" -> event.thread = ann.booleanValue
                 "StackTrace" -> event.stackTrace = ann.booleanValue

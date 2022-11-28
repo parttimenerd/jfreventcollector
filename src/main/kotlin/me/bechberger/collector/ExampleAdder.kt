@@ -1,7 +1,5 @@
 package me.bechberger.collector
 
-import java.nio.file.Path
-import java.nio.file.Paths
 import jdk.jfr.consumer.RecordedObject
 import me.bechberger.collector.xml.AbstractType
 import me.bechberger.collector.xml.Event
@@ -10,6 +8,8 @@ import me.bechberger.collector.xml.Example
 import me.bechberger.collector.xml.FieldType
 import me.bechberger.collector.xml.Type
 import me.bechberger.collector.xml.readXmlAs
+import java.nio.file.Path
+import java.nio.file.Paths
 import kotlin.io.path.writeText
 
 /** Adds examples to the events and types */
