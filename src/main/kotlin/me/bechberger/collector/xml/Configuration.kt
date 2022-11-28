@@ -29,7 +29,8 @@ class Configuration {
         events.associateBy { it.name }
     }
 
-    fun get(event: String): EventConfiguration? = eventMap[event]
+    /** works with 'jdk.Event' and 'Event' */
+    fun get(event: String): EventConfiguration? = eventMap[event] ?: eventMap["jdk.$event"]
 
     override fun toString() = objectToXml(this)
 
