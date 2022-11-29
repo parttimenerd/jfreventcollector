@@ -79,7 +79,7 @@ class ExampleAdder(val metadata: me.bechberger.collector.xml.Metadata) {
                     }
                 }
             }
-        }
+        }.also { it.typeName = type?.name }
     }
 
     private fun addToType(id: Int, type: Type<Example>?, obj: RecordedObject): Example {
@@ -123,6 +123,7 @@ class ExampleAdder(val metadata: me.bechberger.collector.xml.Metadata) {
                 is Array<*> -> {
                     val array = obj.getValue<Array<*>>(field)
                     map[field] = Example(id, FieldType.ARRAY).also {
+                        it.typeName = fieldType?.name
                         if (array.size > MAX_ARRAY_LENGTH) {
                             it.isTruncated = true
                         }
@@ -136,6 +137,7 @@ class ExampleAdder(val metadata: me.bechberger.collector.xml.Metadata) {
             }
         }
         return example.also {
+            it.typeName = type?.name
             it.objectValue = map; it.type = FieldType.OBJECT; type?.examples?.let { examples ->
                 if (examples.size < MAX_EXAMPLES) {
                     examples.add(it)
