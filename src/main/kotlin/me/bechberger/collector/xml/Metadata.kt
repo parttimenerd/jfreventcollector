@@ -101,9 +101,11 @@ class Metadata {
 
     fun read(path: Path) = path.readXmlAs(Metadata::class.java)
 
+    fun String.normalizeName() = this.split(".").last().lowercase()
+
     @get:JsonIgnore
     private val typesCache: MutableMap<String, AbstractType<Example>> by lazy {
-        (types + xmlTypes + xmlContentTypes).associateBy { it.name }.toMutableMap()
+        (types + xmlTypes + xmlContentTypes).associateBy { it.name.normalizeName() }.toMutableMap()
     }
 
     @get:JsonIgnore
@@ -112,10 +114,15 @@ class Metadata {
     }
 
     fun getType(name: String): AbstractType<Example>? {
-        return typesCache.get(name) ?: run {
-            val found = listOf(types, xmlTypes, xmlContentTypes).firstNotNullOfOrNull { it.find { it.name == name } }
+        val normalized = name.normalizeName()
+        return typesCache.get(normalized) ?: run {
+            val found = listOf(
+                types,
+                xmlTypes,
+                xmlContentTypes
+            ).firstNotNullOfOrNull { it.find { it.name.normalizeName() == normalized } }
             if (found != null) {
-                typesCache[name] = found
+                typesCache[normalized] = found
             }
             found
         }
@@ -128,7 +135,7 @@ class Metadata {
     @Suppress("UNCHECKED_CAST")
     private fun <T : AbstractType<*>> getTypeCache(ts: MutableList<T>): MutableMap<String, T> {
         return typeCaches.getOrPut(ts as MutableList<AbstractType<*>>) {
-            ts.associateBy { it.name }.toMutableMap()
+            ts.associateBy { it.name.normalizeName() }.toMutableMap()
         } as MutableMap<String, T>
     }
 
@@ -138,7 +145,7 @@ class Metadata {
 
     /** clear types cache if you change the source list after calling this method previously */
     fun <T : AbstractType<*>> getSpecificType(name: String, source: MutableList<T>): T? {
-        return getTypeCache(source)[name]
+        return getTypeCache(source)[name.normalizeName()]
     }
 
     fun getEvent(name: String): Event? {
@@ -386,13 +393,25 @@ open class Example() {
     @JacksonXmlProperty(isAttribute = true)
     var typeName: String? = null
 
+    @JacksonXmlProperty(isAttribute = true)
+    var contentTypeName: String? = null
+
     constructor(exampleFile: Int, type: FieldType) : this() {
         this.exampleFile = exampleFile
         this.type = type
     }
 
     override fun hashCode(): Int {
-        return Objects.hash(exampleFile, type, isTruncated, stringValue, arrayValue, objectValue, typeName)
+        return Objects.hash(
+            exampleFile,
+            type,
+            isTruncated,
+            stringValue,
+            arrayValue,
+            objectValue,
+            typeName,
+            contentTypeName
+        )
     }
 
     override fun equals(other: Any?): Boolean {
@@ -404,7 +423,8 @@ open class Example() {
                     arrayValue == other.arrayValue &&
                     objectValue == other.objectValue &&
                     isTruncated == other.isTruncated &&
-                    typeName == other.typeName
+                    typeName == other.typeName &&
+                    contentTypeName == other.contentTypeName
             }
             else -> false
         }

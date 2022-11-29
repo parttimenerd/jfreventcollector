@@ -11,6 +11,9 @@ The extended metadata includes
 - since and until which version of the JDK events are supported
 - examples for events and their fields for the renaissance benchmark with different GCs
 
+The event collection is presented at [SapMachine](https://sap.github.io/SapMachine/jfrevents/),
+created by [jfrevents-site-generator](https://github.com/parttimenerd/jfrevents-site-generator).
+
 ## Want to contribute?
 
 Add new descriptions for events, types or fields to the `additional.xml` file.
@@ -25,6 +28,7 @@ how it can be interpreted and used during profiling.
 - The collection JAR (with all extended metadata xmls at your fingertips): 
   [here](https://github.com/parttimenerd/jfreventcollector/releases/latest/download/jfreventcollection.jar).
 - The metadata itself: look no further than the releases page of this repository
+
 
 ## Usage of the metadata including JAR in Code
 Useful when creating your own JFR Event Explorer like tool. The related JAR is called `jfreventcollection.jar`
