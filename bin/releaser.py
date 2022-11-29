@@ -41,11 +41,12 @@ CURRENT_DIR = os.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(_
 CACHE_DIR = f"{CURRENT_DIR}/.cache"
 CACHE_TIME = 60 * 60 * 24  # one day
 RENAISSANCE_JAR = f"{CACHE_DIR}/renaissance.jar"
-JDK_ZIP_DIR = f"{CURRENT_DIR}/.cache/zip"
+JDK_ZIP_DIR = f"{CACHE_DIR}/.cache/zip"
 JFR_FOLDER = f"{CURRENT_DIR}/jfr"
 METADATA_FOLDER = f"{CURRENT_DIR}/metadata"
 ADDITIONAL_METADATA = f"{CURRENT_DIR}/additional.xml"
 RESOURCES_FOLDER = f"{CURRENT_DIR}/src/main/resources/metadata"
+JFC_FILE = f"{CACHE_DIR}/jfc.jfc"
 VERSION = "0.1"
 
 os.makedirs(JDK_ZIP_DIR, exist_ok=True)
@@ -181,12 +182,26 @@ def list_gc_options() -> List[str]:
     return GC_OPTIONS
 
 
+def create_jfc():
+    """ Create a JFC file for the current JDK """
+    with open(os.getenv("JAVA_HOME") + "/lib/jfr/profile.jfc") as f:
+        lines = []
+        for line in f.readlines():
+            if 'name="enabled"' in line:
+                lines.append(line.replace(">false<", ">true<"))
+            else:
+                lines.append(line)
+        with open(JFC_FILE, "w") as f2:
+            f2.write("\n".join(lines))
+
+
 def create_jfr(gc_option: str = None):
+    create_jfc()
     if not os.path.exists(RENAISSANCE_JAR):
         download_benchmarks()
     if gc_option:
         print(f"Creating JFR file for GC option {gc_option}")
-        execute(["java", f"-XX:StartFlightRecording=filename={jfr_file_name(gc_option)},settings=profile",
+        execute(["java", f"-XX:StartFlightRecording=filename={jfr_file_name(gc_option)},settings={JFC_FILE}",
                  "-XX:+" + gc_option, "-jar", RENAISSANCE_JAR, "-t", "10", "-r", "1", "all"])
     else:
         print(f"Creating JFR file for GC options: {', '.join(list_gc_options())}")
