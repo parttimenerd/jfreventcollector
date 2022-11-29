@@ -55,6 +55,14 @@ class ExampleAdder(val metadata: me.bechberger.collector.xml.Metadata) {
                     }
                 }
             }
+            null -> when (type) {
+                null -> Example(id, FieldType.NULL)
+                else -> Example(id, FieldType.NULL).also {
+                    if (type.examples.size < MAX_EXAMPLES) {
+                        type.examples.add(it)
+                    }
+                }
+            }
             else -> {
                 Example(id, FieldType.STRING).also {
                     val string = value.toString()
@@ -118,10 +126,8 @@ class ExampleAdder(val metadata: me.bechberger.collector.xml.Metadata) {
                         if (array.size > MAX_ARRAY_LENGTH) {
                             it.isTruncated = true
                         }
-                        it.arrayValue =
-                            array.take(if (field != "frames") MAX_ARRAY_LENGTH else 1)
-                                .map { elem -> addToAbstractType(id, fieldType, elem) }
-                                .toMutableList()
+                        it.arrayValue = array.take(if (field != "frames") MAX_ARRAY_LENGTH else 1)
+                            .map { elem -> addToAbstractType(id, fieldType, elem) }.toMutableList()
                     }
                 }
                 else -> {
@@ -148,8 +154,7 @@ class ExampleAdder(val metadata: me.bechberger.collector.xml.Metadata) {
 fun main(args: Array<String>) {
     if (args.size < 4 || (args.size - 2) % 3 != 0) {
         println(
-            "Usage: ExampleAdder <path to metadata.xml> <label of file> <description of file> <JFR file> ... " +
-                "<path to resulting metadata.xml>"
+            "Usage: ExampleAdder <path to metadata.xml> <label of file> <description of file> <JFR file> ... " + "<path to resulting metadata.xml>"
         )
         return
     }
