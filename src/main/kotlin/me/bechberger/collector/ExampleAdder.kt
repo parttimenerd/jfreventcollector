@@ -86,6 +86,13 @@ class ExampleAdder(val metadata: me.bechberger.collector.xml.Metadata) {
         return addToType(id, type, obj, Example(id, FieldType.OBJECT))
     }
 
+    data class FieldAndType(
+        val field: String,
+        val type: AbstractType<Example>?,
+        val typeName: String?,
+        val contentType: String?
+    )
+
     private fun <T : Example> addToType(
         id: Int,
         type: Type<T>?,
@@ -97,43 +104,72 @@ class ExampleAdder(val metadata: me.bechberger.collector.xml.Metadata) {
             return example
         }
         val map = mutableMapOf<String, Example>()
+
         val fieldNames = (
-            type?.fields?.associate { it.name to metadata.getType(it.contentType, it.type) }
-                ?: obj.fields.associate { it.name to null }
-            ).toMutableMap()
+            type?.fields?.map {
+                FieldAndType(
+                    it.name,
+                    metadata.getType(it.contentType, it.type),
+                    it.type,
+                    it.contentType
+                )
+            }
+                ?: obj.fields.map {
+                    FieldAndType(
+                        it.name,
+                        metadata.getType(it.contentType, it.typeName),
+                        it.typeName,
+                        it.contentType
+                    )
+                }
+            ).toMutableList()
         if (type != null && type is Event) {
             if (type.stackTrace) {
-                fieldNames["stackTrace"] = metadata.getType("StackTrace")
+                fieldNames.add(FieldAndType("stackTrace", metadata.getType("StackTrace"), "StackTrace", null))
             }
             if (type.thread) {
-                fieldNames["thread"] = metadata.getType("Thread")
+                fieldNames.add(FieldAndType("thread", metadata.getType("Thread"), "Thread", null))
             }
             if (type.startTime) {
-                fieldNames["startTime"] = metadata.getType("millis")
+                fieldNames.add(FieldAndType("startTime", metadata.getType("millis"), "long", "millis"))
             }
         }
-        for ((field, fieldType) in fieldNames) {
-            if (!obj.hasField(field)) {
+        for (entry in fieldNames) {
+            if (!obj.hasField(entry.field)) {
                 continue
             }
-            when (val fieldValue = obj.getValue<Any>(field)) {
+            map[entry.field] = when (val fieldValue = obj.getValue<Any>(entry.field)) {
                 null -> {
-                    map[field] = addToAbstractType(id, fieldType, null)
+                    addToAbstractType(id, entry.type, null)
                 }
                 is Array<*> -> {
-                    val array = obj.getValue<Array<*>>(field)
-                    map[field] = Example(id, FieldType.ARRAY).also {
-                        it.typeName = fieldType?.name
+                    val array = obj.getValue<Array<*>>(entry.field)
+                    Example(id, FieldType.ARRAY).also {
+                        it.typeName = entry.type?.name
                         if (array.size > MAX_ARRAY_LENGTH) {
                             it.isTruncated = true
                         }
-                        it.arrayValue = array.take(if (field != "frames") MAX_ARRAY_LENGTH else 1)
-                            .map { elem -> addToAbstractType(id, fieldType, elem) }.toMutableList()
+                        it.arrayValue = array.take(if (entry.field != "frames") MAX_ARRAY_LENGTH else 1)
+                            .map { elem -> addToAbstractType(id, entry.type, elem) }.toMutableList()
                     }
                 }
                 else -> {
-                    map[field] = addToAbstractType(id, fieldType, fieldValue)
+                    addToAbstractType(id, entry.type, fieldValue)
                 }
+            }.also {
+                it.typeName = entry.typeName?.let {
+                    (
+                        metadata.getSpecificType(entry.typeName, metadata.types)
+                            ?: metadata.getSpecificType(entry.typeName, metadata.xmlTypes)
+                        )?.name ?: entry.typeName
+                }
+                it.contentTypeName =
+                    entry.contentType?.let {
+                        metadata.getSpecificType(
+                            entry.contentType,
+                            metadata.xmlContentTypes
+                        )?.name
+                    } ?: entry.contentType
             }
         }
         return example.also {
