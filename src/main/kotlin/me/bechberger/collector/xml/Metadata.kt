@@ -383,13 +383,16 @@ open class Example() {
     @JacksonXmlProperty(isAttribute = true)
     var isTruncated: Boolean = false
 
+    @JacksonXmlProperty(isAttribute = true)
+    var typeName: String? = null
+
     constructor(exampleFile: Int, type: FieldType) : this() {
         this.exampleFile = exampleFile
         this.type = type
     }
 
     override fun hashCode(): Int {
-        return Objects.hash(exampleFile, type, isTruncated, stringValue, arrayValue, objectValue)
+        return Objects.hash(exampleFile, type, isTruncated, stringValue, arrayValue, objectValue, typeName)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -400,7 +403,8 @@ open class Example() {
                     stringValue == other.stringValue &&
                     arrayValue == other.arrayValue &&
                     objectValue == other.objectValue &&
-                    isTruncated == other.isTruncated
+                    isTruncated == other.isTruncated &&
+                    typeName == other.typeName
             }
             else -> false
         }
