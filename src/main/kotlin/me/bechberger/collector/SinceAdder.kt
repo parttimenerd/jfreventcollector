@@ -10,7 +10,7 @@ import kotlin.io.path.writeText
 
 fun addSinceAndUntil(perVersion: List<Pair<Int, me.bechberger.collector.xml.Metadata>>) {
     perVersion.forEach { (_, meta) ->
-        meta.setSinceAndUntil(perVersion)
+        meta.setSupportedJDKs(perVersion)
     }
 }
 

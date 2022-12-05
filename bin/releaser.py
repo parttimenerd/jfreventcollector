@@ -47,7 +47,7 @@ METADATA_FOLDER = f"{CURRENT_DIR}/metadata"
 ADDITIONAL_METADATA = f"{CURRENT_DIR}/additional.xml"
 RESOURCES_FOLDER = f"{CURRENT_DIR}/src/main/resources/metadata"
 JFC_FILE = f"{CACHE_DIR}/jfc.jfc"
-VERSION = "0.1"
+VERSION = "0.2"
 
 os.makedirs(JDK_ZIP_DIR, exist_ok=True)
 os.makedirs(JFR_FOLDER, exist_ok=True)
@@ -376,7 +376,7 @@ def deploy(snapshot: bool = True):
 
 def parse_cli_args() -> List[str]:
     available_commands = ["versions", "download", "build_parser", "create_jfr", "build_versions", "build", "deploy_mvn",
-                          "deploy_gh", "deploy", "deploy_release", "clear"]
+                          "deploy_gh", "deploy", "deploy_release", "clear", "all"]
     commands = []
     for arg in sys.argv[1:]:
         if arg not in available_commands:
@@ -403,6 +403,7 @@ def cli():
         "deploy": lambda: deploy(snapshot=True),
         "deploy_release": lambda: deploy(snapshot=False),
         "clear": clear,
+        "all": lambda: [clear(), download(), build_parser(), create_jfr(), build_versions(), build(), deploy(snapshot=True)]
     }
     for command in commands:
         coms[command]()

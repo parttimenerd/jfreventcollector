@@ -6,9 +6,9 @@ producing an extended metadata file which can be used by the JFR Event Explorer.
 
 The extended metadata includes
 
-- all events defined in the metadata.xml file and (!) the JDK source code
+- all events defined in the metadata.xml file and the JDK source code
 - additional descriptions: please contribute yourself
-- since and until which version of the JDK events are supported
+- versions of the JDK in which every event, field, ... is present
 - examples for events and their fields for the renaissance benchmark with different GCs
 
 The event collection is presented at [SapMachine](https://sap.github.io/SapMachine/jfrevents/),
@@ -20,6 +20,8 @@ Add new descriptions for events, types or fields to the `additional.xml` file.
 These descriptions should explain what the described entity represents and
 how it can be interpreted and used during profiling.
 
+I pledge to try to bring added descriptions into the OpenJDK (but only JDK head seems to be feasiable, 
+so contributing it here still makes sense).
 
 ## Download
 
@@ -69,7 +71,7 @@ java -cp jfreventcollector.jar me.bechberger.collector.ExampleAdderKt <path to m
 ```
 
 ## Usage of the SinceAdder
-This adds `since` and `until` tags to fields and events based on the passed metadata files.
+This adds `jdks` attributes to fields and events based on the passed metadata files.
 
 ```sh
 java -cp jfreventcollector.jar me.bechberger.collector.SinceAdderKt <smallest version> <metadata file> <metadata output file> ...
@@ -89,7 +91,7 @@ It should be run under the most recent released JDK version to obtain proper JFR
 
 ## Including the library in your project
 
-There are currently only snapshots of version 0.1 available, but the real release will follow soon.
+There are currently only snapshots of version 0.2 available, but the real release will follow soon.
 
 ```xml
 <dependency>

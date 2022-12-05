@@ -12,14 +12,11 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText
 
 @JacksonXmlRootElement(localName = "configuration")
 @JsonIgnoreProperties(ignoreUnknown = true)
-class Configuration {
+class Configuration : WithJDKs<Configuration>() {
     lateinit var version: String
     lateinit var label: String
     lateinit var description: String
     lateinit var provider: String
-
-    var since: Int? = null
-    var until: Int? = null
 
     @JacksonXmlProperty(localName = "event")
     lateinit var events: List<EventConfiguration>
@@ -34,26 +31,19 @@ class Configuration {
 
     override fun toString() = objectToXml(this)
 
-    fun setSinceAndUntil(perVersion: List<Pair<Int, Configuration?>>) {
-        since = perVersion.firstOrNull { it.second != null }?.first
-        until = perVersion.lastOrNull { it.second != null }?.first
-        events.forEach { e -> e.setSinceAndUntil(perVersion.map { (v, c) -> c?.get(e.name) }) }
+    override fun setSupportedJDKs(perVersion: List<Pair<Int, Configuration?>>) {
+        super.setSupportedJDKs(perVersion)
+        events.forEach { e -> e.setSupportedJDKs(perVersion.map { (v, c) -> v to c?.get(e.name) }) }
     }
 }
 
 @JacksonXmlRootElement(localName = "event")
-class EventConfiguration {
+class EventConfiguration : WithJDKs<EventConfiguration>() {
     @JacksonXmlProperty(isAttribute = true)
     lateinit var name: String
 
     @JacksonXmlProperty(localName = "setting")
     lateinit var settings: List<EventSetting>
-
-    @JacksonXmlProperty(isAttribute = true)
-    var since: Int? = null
-
-    @JacksonXmlProperty(isAttribute = true)
-    var until: Int? = null
 
     @get:JsonIgnore
     val settingMap: Map<String, EventSetting> by lazy {
@@ -66,15 +56,14 @@ class EventConfiguration {
 
     override fun toString() = objectToXml(this)
 
-    fun setSinceAndUntil(perVersion: List<EventConfiguration?>) {
-        since = perVersion.firstOrNull { it != null }?.since
-        until = perVersion.lastOrNull { it != null }?.until
-        settings.forEach { s -> s.setSinceAndUntil(perVersion.map { it?.get(s.name) }) }
+    override fun setSupportedJDKs(perVersion: List<Pair<Int, EventConfiguration?>>) {
+        super.setSupportedJDKs(perVersion)
+        settings.forEach { s -> s.setSupportedJDKs(perVersion.map { (v, t) -> v to t?.get(s.name) }) }
     }
 }
 
 @JacksonXmlRootElement(localName = "setting")
-class EventSetting {
+class EventSetting : WithJDKs<EventSetting>() {
     @JacksonXmlProperty(isAttribute = true)
     lateinit var name: String
 
@@ -84,16 +73,9 @@ class EventSetting {
     @JacksonXmlProperty(isAttribute = true)
     var control: String? = null
 
-    @JacksonXmlProperty(isAttribute = true)
-    var since: Int? = null
-
-    @JacksonXmlProperty(isAttribute = true)
-    var until: Int? = null
-
     override fun toString() = objectToXml(this)
 
-    fun setSinceAndUntil(perVersion: List<EventSetting?>) {
-        since = perVersion.firstOrNull { it != null }?.since
-        until = perVersion.lastOrNull { it != null }?.until
+    override fun setSupportedJDKs(perVersion: List<Pair<Int, EventSetting?>>) {
+        super.setSupportedJDKs(perVersion)
     }
 }

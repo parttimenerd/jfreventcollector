@@ -65,12 +65,18 @@ class ExampleAdder(val metadata: me.bechberger.collector.xml.Metadata) {
             }
             else -> {
                 Example(id, FieldType.STRING).also {
-                    val string = value.toString()
+                    var string = value.toString()
+                    if ("/jfreventscollector/" in string) {
+                        string = "[...]/jfreventscollector/" + string.substringAfter("/jfreventscollector/")
+                    }
+                    if ("/Users/" in string) {
+                        string = string.replace(Regex("[/](Users|home)[/][a-zA-Z0-9]+"), "[...]")
+                    }
                     it.stringValue = if (string.length < MAX_TEXT_LENGTH) {
-                        value.toString()
+                        string
                     } else {
                         it.isTruncated = true
-                        value.toString().substring(0, MAX_TEXT_LENGTH)
+                        string.substring(0, MAX_TEXT_LENGTH)
                     }
                     type?.examples?.let { examples ->
                         if (examples.size < MAX_EXAMPLES) {
