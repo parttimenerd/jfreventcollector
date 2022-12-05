@@ -179,21 +179,20 @@ class Metadata {
                 ownTypes[type.name] = type
             }
             ownTypes.map { (name, type) ->
-                type to
-                    perVersion.map { (version, _) ->
-                        version to types[name]?.get(version)
-                    }
+                type to perVersion.map { (version, _) ->
+                    version to types[name]?.get(version)
+                }
             }
         }
     }
 
-    fun setSinceAndUntil(perVersion: List<Pair<Int, Metadata>>) {
+    fun setSupportedJDKs(perVersion: List<Pair<Int, Metadata>>) {
         combineTypes(perVersion).forEach { (t, ts) ->
-            (t as AbstractType<Example>).setSinceAndUntil(ts as List<Pair<Int, AbstractType<Example>?>>)
+            (t as AbstractType<Example>).setSupportedJDKs(ts as List<Pair<Int, AbstractType<Example>?>>)
         }
-        events.forEach { e -> e.setSinceAndUntil(perVersion.map { (v, m) -> v to m.getEvent(e.name) }) }
+        events.forEach { e -> e.setSupportedJDKs(perVersion.map { (v, m) -> v to m.getEvent(e.name) }) }
 
-        configurations.forEach { c -> c.setSinceAndUntil(perVersion.map { (v, m) -> v to m.getConfiguration(c.label) }) }
+        configurations.forEach { c -> c.setSupportedJDKs(perVersion.map { (v, m) -> v to m.getConfiguration(c.label) }) }
     }
 
     fun addAdditionalDescription(other: Metadata) {
@@ -341,6 +340,30 @@ class Event() : Type<EventExample>() {
     }
 
     override fun toString() = objectToXml(this)
+
+    override fun setSupportedJDKs(perVersion: List<Pair<Int, AbstractType<EventExample>?>>) {
+        super.setSupportedJDKs(perVersion)
+        configurations.forEach { conf ->
+            conf.setSupportedJDKs(
+                perVersion.map { (v, t) ->
+                    v to t?.let {
+                        (t as Event).configurations.find { it.id == conf.id }
+                    }
+                }
+            )
+        }
+        fields.forEach { field ->
+            field.setSupportedJDKs(
+                perVersion.map { (v, t) ->
+                    v to t?.let {
+                        (t as Event).getField(
+                            field.name
+                        )
+                    }
+                }
+            )
+        }
+    }
 }
 
 class ExampleFile() {
@@ -417,14 +440,7 @@ open class Example() {
     override fun equals(other: Any?): Boolean {
         return when (other) {
             is Example -> {
-                exampleFile == other.exampleFile &&
-                    type == other.type &&
-                    stringValue == other.stringValue &&
-                    arrayValue == other.arrayValue &&
-                    objectValue == other.objectValue &&
-                    isTruncated == other.isTruncated &&
-                    typeName == other.typeName &&
-                    contentTypeName == other.contentTypeName
+                exampleFile == other.exampleFile && type == other.type && stringValue == other.stringValue && arrayValue == other.arrayValue && objectValue == other.objectValue && isTruncated == other.isTruncated && typeName == other.typeName && contentTypeName == other.contentTypeName
             }
             else -> false
         }
@@ -433,7 +449,7 @@ open class Example() {
 
 class EventExample(exampleFile: Int) : Example(exampleFile, FieldType.OBJECT)
 
-class SingleEventConfiguration {
+class SingleEventConfiguration : WithJDKs<SingleEventConfiguration> {
     /** index in the configurations list, obtain label, ... from there */
     @JacksonXmlProperty(isAttribute = true)
     var id: Int = -1
@@ -445,6 +461,11 @@ class SingleEventConfiguration {
         this.id = id
         this.settings = settings
     }
+
+    override fun setSupportedJDKs(perVersion: List<Pair<Int, SingleEventConfiguration?>>) {
+        super.setSupportedJDKs(perVersion)
+        settings.forEach { setting -> setting.setSupportedJDKs(perVersion.map { (v, s) -> v to s?.let { s.settings.find { it.name == setting.name } } }) }
+    }
 }
 
 enum class Period {
@@ -455,18 +476,12 @@ enum class Period {
     END_CHUNK,
 }
 
-open class AbstractType<E : Example> {
+open class AbstractType<E : Example> : WithJDKs<AbstractType<E>>() {
     @JacksonXmlProperty(isAttribute = true)
     lateinit var name: String
 
     @JacksonXmlProperty(isAttribute = true)
     var label: String = ""
-
-    @JacksonXmlProperty(isAttribute = true)
-    var since: Int? = null
-
-    @JacksonXmlProperty(isAttribute = true)
-    var until: Int? = null
 
     @JacksonXmlProperty(localName = "Example")
     var examples: MutableSet<E> = mutableSetOf()
@@ -479,11 +494,6 @@ open class AbstractType<E : Example> {
     var additionalDescription: String? = null
 
     override fun toString() = objectToXml(this)
-
-    open fun setSinceAndUntil(perVersion: List<Pair<Int, AbstractType<E>?>>) {
-        since = perVersion.firstOrNull { it.second != null }?.first
-        until = perVersion.lastOrNull { it.second != null }?.first
-    }
 
     open fun addAdditionalDescription(other: AbstractType<E>) {
         additionalDescription = other.additionalDescription
@@ -499,12 +509,10 @@ open class Type<E : Example> : AbstractType<E>() {
         return fields.find { it.name == name }
     }
 
-    override fun setSinceAndUntil(perVersion: List<Pair<Int, AbstractType<E>?>>) {
-        since = perVersion.firstOrNull { it.second != null }?.first
-        until = perVersion.lastOrNull { it.second != null }?.first
-
+    override fun setSupportedJDKs(perVersion: List<Pair<Int, AbstractType<E>?>>) {
+        super.setSupportedJDKs(perVersion)
         fields.forEach { field ->
-            field.setSinceAndUntil(
+            field.setSupportedJDKs(
                 perVersion.map { (v, t) ->
                     v to t?.let {
                         (t as Type).getField(
@@ -535,7 +543,7 @@ enum class Transition {
     FROM
 }
 
-class Field {
+class Field : WithJDKs<Field>() {
     @JacksonXmlProperty(isAttribute = true)
     lateinit var type: String
 
@@ -566,21 +574,10 @@ class Field {
     @JacksonXmlProperty(isAttribute = true)
     var array: Boolean = false
 
-    @JacksonXmlProperty(isAttribute = true)
-    var since: Int? = null
-
-    @JacksonXmlProperty(isAttribute = true)
-    var until: Int? = null
-
     @JacksonXmlText
     var additionalDescription: String? = null
 
     override fun toString() = objectToXml(this)
-
-    fun setSinceAndUntil(perVersion: List<Pair<Int, Field?>>) {
-        since = perVersion.firstOrNull { it.second != null }?.first
-        until = perVersion.lastOrNull { it.second != null }?.first
-    }
 
     fun addAdditionalDescription(other: Field) {
         additionalDescription = other.additionalDescription
