@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>jfreventcollector</artifactId>
     <groupId>me.bechberger</groupId>
     <name>JFR Event Collector</name>
 
-    <version>${project.vversion}${project.suffix}</version>
+    <version>0.2</version>
     <url>https://github.com/parttimenerd/jfreventcollector</url>
     <licenses>
         <license>
@@ -27,7 +25,8 @@
         <connection>scm:git:https://github.com/parttimenerd/jfreventcollector.git</connection>
         <developerConnection>scm:git:https://github.com/parttimenerd/jfreventcollector.git</developerConnection>
         <url>https://github.com/parttimenerd/jfreventcollector.git</url>
-    </scm>
+      <tag>jfreventcollector-0.2</tag>
+  </scm>
     <inceptionYear>2022</inceptionYear>
     <description>Contains tools to extract information on JFR events from the OpenJDK source code and JFR files.</description>
 
