@@ -47,7 +47,7 @@ METADATA_FOLDER = f"{CURRENT_DIR}/metadata"
 ADDITIONAL_METADATA = f"{CURRENT_DIR}/additional.xml"
 RESOURCES_FOLDER = f"{CURRENT_DIR}/src/main/resources/metadata"
 JFC_FILE = f"{CACHE_DIR}/jfc.jfc"
-VERSION = "0.2"
+VERSION = "0.3"
 
 os.makedirs(JDK_ZIP_DIR, exist_ok=True)
 os.makedirs(JFR_FOLDER, exist_ok=True)

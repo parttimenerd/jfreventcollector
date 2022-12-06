@@ -91,13 +91,12 @@ It should be run under the most recent released JDK version to obtain proper JFR
 
 ## Including the library in your project
 
-There are currently only snapshots of version 0.2 available, but the real release will follow soon.
-
+There is currently the release 0.2 available and the snapshot release is 0.3-SNAPSHOT.
 ```xml
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jfreventcollector</artifactId>
-    <version>$version-SNAPSHOT</version>
+    <version>0.2</version>
 </dependency>
 ```
 
@@ -105,14 +104,15 @@ There are currently only snapshots of version 0.2 available, but the real releas
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jfreventcollection</artifactId>
-    <version>$version-SNAPSHOT</version>
+    <version>0.2</version>
 </dependency>
 ```
 
-You also have to add the snapshot repository:
+You might have to add the `https://s01.oss.sonatype.org/content/repositories/releases/` repo:
+
+To use snapshots, you have to add the snapshot repository:
 
 ```xml
-
 <repositories>
     <repository>
         <id>snapshots</id>
