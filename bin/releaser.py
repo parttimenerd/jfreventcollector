@@ -24,6 +24,7 @@ Usage:
 
 Commands:
     versions          print all available JDK versions
+    tags              print the current tag for all JDK versions
     download          download the latest source code for every JDK version
     build_parser      build the parser JAR
     create_jfr        create the JFR file for every available GC
@@ -47,7 +48,7 @@ METADATA_FOLDER = f"{CURRENT_DIR}/metadata"
 ADDITIONAL_METADATA = f"{CURRENT_DIR}/additional.xml"
 RESOURCES_FOLDER = f"{CURRENT_DIR}/src/main/resources/metadata"
 JFC_FILE = f"{CACHE_DIR}/jfc.jfc"
-VERSION = "0.3"
+VERSION = "0.4"
 
 os.makedirs(JDK_ZIP_DIR, exist_ok=True)
 os.makedirs(JFR_FOLDER, exist_ok=True)
@@ -111,11 +112,16 @@ def get_repos() -> List[Repo]:
 
 
 def get_tags(repo: Repo) -> List[Dict[str, Any]]:
-    return download_json(f"https://api.github.com/repos/openjdk/{repo.name}/tags", f"tags_{repo.name}.json")
+    return [d for d in download_json(f"https://api.github.com/repos/openjdk/{repo.name}/tags?per_page=100",
+                                     f"tags_{repo.name}.json") if d["name"].startswith(f"jdk-{repo.version}")]
 
 
 def get_latest_release_name_and_zip_url(repo: Repo) -> Tuple[str, str]:
-    return get_tags(repo)[0]["name"], get_tags(repo)[0]["zipball_url"]
+    names = [d["name"] for d in get_tags(repo)]
+    latest_name = names[0]
+    if any("." in name for name in names):
+        latest_name = [name for name in names if "." in name][0]
+    return latest_name, [d["zipball_url"] for d in get_tags(repo) if d["name"] == latest_name][0]
 
 
 def download_latest_release(repo: Repo):
@@ -376,7 +382,7 @@ def deploy(snapshot: bool = True):
 
 def parse_cli_args() -> List[str]:
     available_commands = ["versions", "download", "build_parser", "create_jfr", "build_versions", "build", "deploy_mvn",
-                          "deploy_gh", "deploy", "deploy_release", "clear", "all"]
+                          "deploy_gh", "deploy", "deploy_release", "clear", "all", "tags"]
     commands = []
     for arg in sys.argv[1:]:
         if arg not in available_commands:
@@ -393,6 +399,8 @@ def cli():
     commands = parse_cli_args()
     coms = {
         "versions": lambda: print(" ".join(str(r.version) for r in get_repos())),
+        "tags": lambda: print(
+            "\n".join(f"{r.version}: {get_latest_release_name_and_zip_url(r)[0]}" for r in get_repos())),
         "download": download,
         "build_parser": build_parser,
         "create_jfr": create_jfr,
@@ -403,7 +411,8 @@ def cli():
         "deploy": lambda: deploy(snapshot=True),
         "deploy_release": lambda: deploy(snapshot=False),
         "clear": clear,
-        "all": lambda: [clear(), download(), build_parser(), create_jfr(), build_versions(), build(), deploy(snapshot=True)]
+        "all": lambda: [clear(), download(), build_parser(), create_jfr(), build_versions(), build(),
+                        deploy(snapshot=True)]
     }
     for command in commands:
         coms[command]()

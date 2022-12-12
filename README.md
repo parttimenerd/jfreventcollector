@@ -89,12 +89,12 @@ It should be run under the most recent released JDK version to obtain proper JFR
 
 ## Including the library in your project
 
-There is currently the release 0.2 available and the snapshot release is 0.3-SNAPSHOT.
+There is currently the release 0.3 available and the snapshot release is 0.3-SNAPSHOT.
 ```xml
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jfreventcollector</artifactId>
-    <version>0.2</version>
+    <version>0.3</version>
 </dependency>
 ```
 
@@ -102,7 +102,7 @@ There is currently the release 0.2 available and the snapshot release is 0.3-SNA
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jfreventcollection</artifactId>
-    <version>0.2</version>
+    <version>0.3</version>
 </dependency>
 ```
 
@@ -135,6 +135,7 @@ Usage:
 
 Commands:
     versions          print all available JDK versions
+    tags              print the current tag for all JDK versions
     download          download the latest source code for every JDK version
     build_parser      build the parser JAR
     create_jfr        create the JFR file for every available GC
