@@ -223,7 +223,7 @@ def create_jfr(gc_option: str = None):
     if gc_option:
         print(f"Creating JFR file for GC option {gc_option}")
         execute(["java", f"-XX:StartFlightRecording=filename={jfr_file_name(gc_option)},settings={JFC_FILE}",
-                 "-XX:+" + gc_option, "-jar", RENAISSANCE_JAR, "-t", "10", "-r", "1", "all"])
+                 "-XX:+" + gc_option, "-jar", RENAISSANCE_JAR, "-t", "5", "-r", "1", "all"])
     else:
         print(f"Creating JFR file for GC options: {', '.join(list_gc_options())}")
         for gc_option in list_gc_options():
@@ -311,8 +311,10 @@ def build():
         shutil.copy(meta_file_name(repo), f"{RESOURCES_FOLDER}/metadata_{repo.version}.xml")
     with open(RESOURCES_FOLDER + "/versions", "w") as f:
         f.write("\n".join(str(repo.version) for repo in get_repos()))
-    print("Build loader package")
-    execute(f"mvn -f pom_loader.xml package assembly:single")
+    with open(RESOURCES_FOLDER + "/specific_versions", "w") as f:
+        f.write("\n".join(f"{repo.version}: {get_latest_release_name_and_zip_url(repo)[0]}" for repo in get_repos()))
+        print("Build loader package")
+        execute(f"mvn -f pom_loader.xml package assembly:single")
 
 
 def clear_harness_and_launchers():

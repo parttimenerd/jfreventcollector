@@ -149,6 +149,10 @@ Commands:
 
 ```
 
+### Snapshots
+
+Run `bin/releaser.py download build_parser build_versions build deploy`.
+Only run `bin/releaser.py create_jfr` if you have a new JDK version installed.
 
 ## Troubleshooting
 Builds might take longer on newer maven versions due to blocking
