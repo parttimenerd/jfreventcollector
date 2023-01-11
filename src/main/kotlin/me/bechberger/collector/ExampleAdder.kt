@@ -26,7 +26,8 @@ class ExampleAdder(val metadata: me.bechberger.collector.xml.Metadata) {
 
     private fun addEventExamples(id: Int, processor: Processor) {
         val events = metadata.events.map { "jdk." + it.name to it }.toMap()
-        for ((type, event) in processor.events) {
+        for ((type, e) in processor.events) {
+            val event = e.random()
             if (type.name in events) {
                 val metadataEvent = events[type.name]!!
                 addToEvent(id, metadataEvent, event)

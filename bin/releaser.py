@@ -25,6 +25,7 @@ Usage:
 Commands:
     versions          print all available JDK versions
     tags              print the current tag for all JDK versions
+    download_urls     print the latest source code download URLs for every JDK version
     download          download the latest source code for every JDK version
     build_parser      build the parser JAR
     create_jfr        create the JFR file for every available GC
@@ -34,6 +35,7 @@ Commands:
     deploy_gh         deploy the JARs and XML files to GitHub
     deploy            the two above
     deploy_release    deploy the JARs and XML files to GitHub and Maven as releases
+    all               clear, download, build_parser, ..., deploy_gh
     clear             clear some folders
 """
 
@@ -54,6 +56,13 @@ os.makedirs(JDK_ZIP_DIR, exist_ok=True)
 os.makedirs(JFR_FOLDER, exist_ok=True)
 os.makedirs(METADATA_FOLDER, exist_ok=True)
 
+LOG = os.getenv("LOG", "false") == "true"
+
+
+def log(msg: str):
+    if LOG:
+        print(msg)
+
 
 def execute(args: Union[List[str], str]):
     subprocess.check_call(args, cwd=CURRENT_DIR, shell=isinstance(args, str), stdout=subprocess.DEVNULL)
@@ -66,7 +75,7 @@ def download_file(url, path: str, retention: int = CACHE_TIME) -> str:
     cache_path = f"{CACHE_DIR}/{path}" if ".cache" not in path else path
 
     if not os.path.exists(cache_path) or os.path.getmtime(cache_path) + retention <= time.time():
-        print(f"Downloading {url} to {cache_path}")
+        log(f"Downloading {url} to {cache_path}")
         request.urlretrieve(url, cache_path)
     return cache_path
 
@@ -122,6 +131,12 @@ def get_latest_release_name_and_zip_url(repo: Repo) -> Tuple[str, str]:
     if any("." in name for name in names):
         latest_name = [name for name in names if "." in name][0]
     return latest_name, [d["zipball_url"] for d in get_tags(repo) if d["name"] == latest_name][0]
+
+
+def download_urls():
+    for repo in get_repos():
+        latest_name, zip_url = get_latest_release_name_and_zip_url(repo)
+        print(f"{repo.version}: {zip_url}")
 
 
 def download_latest_release(repo: Repo):
@@ -213,6 +228,7 @@ def create_jfr(gc_option: str = None):
         print(f"Creating JFR file for GC options: {', '.join(list_gc_options())}")
         for gc_option in list_gc_options():
             create_jfr(gc_option)
+    os.system(f"rm -fr '{CURRENT_DIR}/harness*'")
 
 
 def create_jfr_if_needed(gc_option: str = None):
@@ -381,8 +397,8 @@ def deploy(snapshot: bool = True):
 
 
 def parse_cli_args() -> List[str]:
-    available_commands = ["versions", "download", "build_parser", "create_jfr", "build_versions", "build", "deploy_mvn",
-                          "deploy_gh", "deploy", "deploy_release", "clear", "all", "tags"]
+    available_commands = ["versions", "download_urls", "download", "build_parser", "create_jfr", "build_versions",
+                          "build", "deploy_mvn", "deploy_gh", "deploy", "deploy_release", "clear", "all", "tags"]
     commands = []
     for arg in sys.argv[1:]:
         if arg not in available_commands:
@@ -401,6 +417,7 @@ def cli():
         "versions": lambda: print(" ".join(str(r.version) for r in get_repos())),
         "tags": lambda: print(
             "\n".join(f"{r.version}: {get_latest_release_name_and_zip_url(r)[0]}" for r in get_repos())),
+        "download_urls": download_urls,
         "download": download,
         "build_parser": build_parser,
         "create_jfr": create_jfr,

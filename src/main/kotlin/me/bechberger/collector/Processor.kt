@@ -13,10 +13,12 @@ import jdk.jfr.consumer.RecordingFile
  */
 class Processor(val file: Path) {
 
-    val events = mutableMapOf<EventType, RecordedEvent>()
+    val events = mutableMapOf<EventType, MutableList<RecordedEvent>>()
     val eventCounts = mutableMapOf<String, Int>()
     var eventSum: Int = 0
     val typeNames = mutableMapOf<String, Any>()
+
+    private fun getEventCount(event: RecordedEvent) = eventCounts.getOrDefault(event.eventType.name, 0)
 
     fun processField(obj: RecordedObject, field: String, fieldType: String) {
         val value = obj.getValue<Any>(field) ?: return
@@ -31,7 +33,7 @@ class Processor(val file: Path) {
     }
 
     fun processEvent(event: RecordedEvent) {
-        events[event.eventType] = event
+        events.computeIfAbsent(event.eventType) { mutableListOf() }.add(event)
         event.fields.forEach { field ->
             processField(event, field.name, field.typeName)
         }
@@ -41,7 +43,7 @@ class Processor(val file: Path) {
         RecordingFile(file).use { recording ->
             while (recording.hasMoreEvents()) {
                 val event = recording.readEvent()
-                if (!eventCounts.contains(event.eventType.name)) {
+                if (getEventCount(event) < MAX_EVENTS_PER_TYPE) {
                     processEvent(event)
                 }
                 eventCounts[event.eventType.name] = eventCounts.getOrDefault(event.eventType.name, 0) + 1
@@ -107,8 +109,9 @@ class Processor(val file: Path) {
     fun print() {
         printSummaryStats()
         println()
-        events.forEach { (type, event) ->
+        events.forEach { (type, e) ->
             println("${type.name} (${eventCounts[type.name]} / ${percentage(eventCounts[type.name]!!)} of $eventSum)")
+            val event = e.first()
             printType(event)
             println("Example:")
             println(event.toString().ident("  "))
@@ -128,6 +131,10 @@ class Processor(val file: Path) {
             }
             println()
         }
+    }
+
+    companion object {
+        const val MAX_EVENTS_PER_TYPE = 100
     }
 }
 
