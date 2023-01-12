@@ -4,6 +4,7 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.net.URL
+import java.time.Instant
 import java.util.Enumeration
 
 /** Loads the included extended metadata files */
@@ -17,6 +18,14 @@ object Loader {
     /** Java version to specific version tag */
     fun getSpecificVersions(): Map<Int, String> {
         return getLines("metadata/specific_versions").map { it.split(": ") }.map { it[0].toInt() to it[1] }.toMap()
+    }
+
+    fun getSpecificVersion(version: Int): String {
+        return getSpecificVersions()[version]!!
+    }
+
+    fun getCreationDate(): Instant {
+        return Instant.ofEpochSecond(getLines("metadata/time").first().trim().toLong())
     }
 
     private fun getLines(file: String): List<String> {
