@@ -222,8 +222,13 @@ def create_jfr(gc_option: str = None):
         download_benchmarks()
     if gc_option:
         print(f"Creating JFR file for GC option {gc_option}")
-        execute(["java", f"-XX:StartFlightRecording=filename={jfr_file_name(gc_option)},settings={JFC_FILE}",
-                 "-XX:+" + gc_option, "-jar", RENAISSANCE_JAR, "-t", "5", "-r", "1", "all"])
+        try:
+            execute(["java", f"-XX:StartFlightRecording=filename={jfr_file_name(gc_option)},settings={JFC_FILE}",
+                    "-XX:+" + gc_option, "-jar", RENAISSANCE_JAR, "-t", "5", "-r", "1", "all"])
+        except subprocess.CalledProcessError as ex:
+            if not os.path.exists(jfr_file_name(gc_option)):
+                raise ex
+            print(f"Caught a Java error", file=sys.stderr)
     else:
         print(f"Creating JFR file for GC options: {', '.join(list_gc_options())}")
         for gc_option in list_gc_options():
