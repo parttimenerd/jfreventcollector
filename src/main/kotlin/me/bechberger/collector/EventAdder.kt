@@ -105,7 +105,6 @@ class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.
                 "Label" -> event.label = ann.stringValue
                 "Description" -> event.description = ann.stringValue
                 "Category" -> event.category = ann.stringArray.joinToString(", ")
-                "StartTime" -> event.duration = ann.booleanValue
                 "Experimental" -> event.experimental = true
                 "Thread" -> event.thread = ann.booleanValue
                 "StackTrace" -> event.stackTrace = ann.booleanValue

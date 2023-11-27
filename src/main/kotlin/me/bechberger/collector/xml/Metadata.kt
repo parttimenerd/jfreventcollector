@@ -16,11 +16,35 @@ import java.util.Objects
 @JacksonXmlRootElement
 class Metadata {
 
+    /**
+     * Events where the JDK sets both start_time and end_time to the same value (usually start time),
+     * obtained by manually inspecting the JDK 22 source code
+     */
+    val fakeEndTimes = setOf(
+        "ExecutionSample",
+        "NativeMethodSample",
+        "GCLocker",
+        "ObjectCount",
+        "ObjectCounterAfterGC",
+        "FinalizerStatistics",
+        "ModuleRequire",
+        "ModuleExport",
+        "NetworkUtilization",
+        "InitialEnvironmentVariable",
+        "NativeLibrary",
+        "InitialSystemProperty",
+        "ThreadAllocationStatistics",
+        "GCHeapMemoryUsage",
+        "GCHeapMemoryPoolUsage",
+    )
+
     @JacksonXmlProperty(localName = "Event")
     @JacksonXmlElementWrapper(useWrapping = false) // see https://github.com/FasterXML/jackson-dataformat-xml/issues/275#issuecomment-352700025
     var events: MutableList<Event> = mutableListOf()
         set(value) {
             field.addAll(value)
+            value.filter { it.name in fakeEndTimes && it.duration }
+                .forEach { it.markEndTimeAsFake() }
         }
 
     @JacksonXmlProperty(localName = "Type")
@@ -79,12 +103,12 @@ class Metadata {
     fun findMatchingContentAnnotationOrAdd(
         annotationType: String,
         valueExpression: String,
-        hasFrequency: Boolean = false
+        hasFrequency: Boolean = false,
     ): XmlContentType {
         return xmlContentTypes.find { it.matchesAnnotation(annotationType, valueExpression) } ?: XmlContentType.create(
             annotationType,
             valueExpression,
-            hasFrequency
+            hasFrequency,
         ).also { xmlContentTypes.add(it) }
     }
 
@@ -119,7 +143,7 @@ class Metadata {
             val found = listOf(
                 types,
                 xmlTypes,
-                xmlContentTypes
+                xmlContentTypes,
             ).firstNotNullOfOrNull { it.find { it.name.normalizeName() == normalized } }
             if (found != null) {
                 typesCache[normalized] = found
@@ -220,11 +244,37 @@ class Event() : Type<EventExample>() {
      * startTime setting enables the duration property.
      */
     @JsonIgnore
-    val startTime: Boolean = true
+    var startTime: Boolean = true
+
+    /** has an duration field */
+    @JacksonXmlProperty(isAttribute = true)
+    var durationField: Boolean = true
+
+    /** has an endTime field */
+    @JacksonXmlProperty(isAttribute = true)
+    var endTime: Boolean = true
 
     /** has a duration field */
     @JacksonXmlProperty(isAttribute = true, localName = "startTime")
     var duration: Boolean = true
+
+    /** has a fake endTime field */
+    @JacksonXmlProperty(isAttribute = true)
+    var fakeEndTime: Boolean = false
+
+    @JacksonXmlProperty(isAttribute = true)
+    var fakeDuration: Boolean = false
+
+    fun markEndTimeAsFake() {
+        fakeEndTime = true
+        fakeDuration = true
+    }
+
+    fun setEndTimeField(duration: Boolean) {
+        this.duration = duration
+        this.durationField = duration
+        this.endTime = duration
+    }
 
     @JacksonXmlProperty(isAttribute = true)
     var experimental: Boolean = false
@@ -270,7 +320,8 @@ class Event() : Type<EventExample>() {
         category: String = "",
         label: String = "",
         description: String? = null,
-        duration: Boolean = false,
+        endTime: Boolean = false,
+        fakeEndTime: Boolean = false,
         experimental: Boolean = false,
         thread: Boolean = false,
         stackTrace: Boolean = false,
@@ -284,13 +335,17 @@ class Event() : Type<EventExample>() {
         source: String? = null,
         examples: MutableSet<EventExample> = mutableSetOf(),
         additionalDescription: String? = null,
-        appearedIn: MutableSet<Int> = mutableSetOf()
+        appearedIn: MutableSet<Int> = mutableSetOf(),
     ) : this() {
         this.name = name
         this.category = category
         this.label = label
         this.description = description
-        this.duration = duration
+        setEndTimeField(endTime)
+        this.fakeEndTime = fakeEndTime
+        if (fakeEndTime) {
+            this.fakeDuration = true
+        }
         this.experimental = experimental
         this.thread = thread
         this.stackTrace = stackTrace
@@ -321,7 +376,8 @@ class Event() : Type<EventExample>() {
             merge(category, other.category),
             merge(label, other.label),
             merge(description, other.description),
-            duration || other.duration,
+            endTime || other.endTime,
+            fakeEndTime || other.fakeEndTime,
             experimental || other.experimental,
             thread || other.thread,
             stackTrace || other.stackTrace,
@@ -335,7 +391,7 @@ class Event() : Type<EventExample>() {
             merge(source, other.source),
             (examples + other.examples).toMutableSet(),
             (additionalDescription ?: "") + (other.additionalDescription ?: ""),
-            (appearedIn + other.appearedIn).toMutableSet()
+            (appearedIn + other.appearedIn).toMutableSet(),
         )
     }
 
@@ -349,7 +405,7 @@ class Event() : Type<EventExample>() {
                     v to t?.let {
                         (t as Event).configurations.find { it.id == conf.id }
                     }
-                }
+                },
             )
         }
         fields.forEach { field ->
@@ -357,10 +413,10 @@ class Event() : Type<EventExample>() {
                 perVersion.map { (v, t) ->
                     v to t?.let {
                         (t as Event).getField(
-                            field.name
+                            field.name,
                         )
                     }
-                }
+                },
             )
         }
     }
@@ -390,7 +446,7 @@ enum class FieldType {
     ARRAY,
 
     @JsonProperty("null")
-    NULL
+    NULL,
 }
 
 open class Example() {
@@ -433,7 +489,7 @@ open class Example() {
             arrayValue,
             objectValue,
             typeName,
-            contentTypeName
+            contentTypeName,
         )
     }
 
@@ -442,6 +498,7 @@ open class Example() {
             is Example -> {
                 exampleFile == other.exampleFile && type == other.type && stringValue == other.stringValue && arrayValue == other.arrayValue && objectValue == other.objectValue && isTruncated == other.isTruncated && typeName == other.typeName && contentTypeName == other.contentTypeName
             }
+
             else -> false
         }
     }
@@ -516,10 +573,10 @@ open class Type<E : Example> : AbstractType<E>() {
                 perVersion.map { (v, t) ->
                     v to t?.let {
                         (t as Type).getField(
-                            field.name
+                            field.name,
                         )
                     }
-                }
+                },
             )
         }
     }
@@ -540,7 +597,7 @@ enum class Transition {
     TO,
 
     @JsonProperty("from")
-    FROM
+    FROM,
 }
 
 class Field : WithJDKs<Field>() {

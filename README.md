@@ -89,12 +89,12 @@ It should be run under the most recent released JDK version to obtain proper JFR
 
 ## Including the library in your project
 
-There is currently the release 0.3 available and the snapshot release is 0.3-SNAPSHOT.
+There is currently the release 0.4 available and the snapshot release is 0.5-SNAPSHOT.
 ```xml
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jfreventcollector</artifactId>
-    <version>0.3</version>
+    <version>0.4</version>
 </dependency>
 ```
 
@@ -102,7 +102,7 @@ There is currently the release 0.3 available and the snapshot release is 0.3-SNA
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jfreventcollection</artifactId>
-    <version>0.3</version>
+    <version>0.4</version>
 </dependency>
 ```
 
