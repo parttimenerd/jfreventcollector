@@ -93,7 +93,7 @@ def download_zip(url, path: str, retention: int = CACHE_TIME) -> str:
     dir_path = path[:-4]
     if not os.path.exists(dir_path):
         execute(
-            ["unzip", "-o", path, "-d", dir_path, "*/src/jdk.jfr/*", "*/src/hotspot/share/jfr/metadata/metadata.xml"])
+            ["unzip", "-o", path, "-d", dir_path])
     return dir_path
 
 
