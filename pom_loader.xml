@@ -39,7 +39,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <java.version>11</java.version>
-        <project.vversion>0.4</project.vversion>
+        <project.vversion>0.5</project.vversion>
         <project.suffix>-SNAPSHOT</project.suffix>
     </properties>
 
@@ -57,7 +57,7 @@
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
-                <version>1.7.20</version>
+                <version>1.9.0</version>
                 <executions>
                     <execution>
                         <id>compile</id>
@@ -124,7 +124,7 @@
             <plugin>
                 <groupId>org.jetbrains.dokka</groupId>
                 <artifactId>dokka-maven-plugin</artifactId>
-                <version>1.7.20</version>
+                <version>1.9.0</version>
                 <executions>
                     <execution>
                         <phase>prepare-package</phase>
@@ -200,7 +200,7 @@
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>1.7.20</version>
+            <version>1.9.0</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>

@@ -14,6 +14,7 @@ import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.writeText
+import kotlin.system.exitProcess
 
 class AdderException(message: String) : RuntimeException(message)
 
@@ -58,9 +59,11 @@ val CtAnnotation<*>.value
 /**
  * Add parsed events and info from found configurations
  *
+ * @param openJDKFolder path to the OpenJDK source code
+ * @param url url to the main folder of the OpenJDK source code on GitHUb
  * @param metadata metadata to extend with the found info
  */
-class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.xml.Metadata) {
+class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.xml.Metadata, val url: String) {
 
     fun configurations(): List<Configuration> {
         val configurations = mutableListOf<Configuration>()
@@ -238,20 +241,22 @@ class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.
                 .map { it.first to it.second!! }
         )
         val meta = metadata.copy().also { it.events.addAll(eventNodes.map { event -> event.mergedEvent }) }
+        meta.url = url
         addConfigurations(meta, configurations())
         return meta
     }
 }
 
 fun main(args: Array<String>) {
-    if (args.size != 3) {
-        println("Usage: EventAdder <path to metadata.xml> <path to OpenJDK source> <path to result xml file>")
-        return
+    if (args.size != 4) {
+        println("Usage: EventAdder <path to metadata.xml> <path to OpenJDK source> <url to main folder> <path to result xml file>")
+        exitProcess(1)
     }
     val metadataPath = Paths.get(args[0])
     val sourcePath = Paths.get(args[1])
+    val url = args[2]
     val metadata = metadataPath.readXmlAs(me.bechberger.collector.xml.Metadata::class.java)
-    val eventAdder = EventAdder(sourcePath, metadata)
+    val eventAdder = EventAdder(sourcePath, metadata, url)
     val meta = eventAdder.process()
     val out = args[args.size - 1]
     if (out == "-") {

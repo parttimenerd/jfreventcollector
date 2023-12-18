@@ -15,12 +15,12 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Union, Tuple
+from typing import Any, Dict, List, Union, Tuple, Set
 from urllib import request
 
 HELP = """
 Usage:
-    python3 releaser.py <command> ... <command>
+    python3 releaser.py <command> ... <command> [--force]
 
 Commands:
     versions          print all available JDK versions
@@ -35,11 +35,21 @@ Commands:
     deploy_gh         deploy the JARs and XML files to GitHub
     deploy            the two above
     deploy_release    deploy the JARs and XML files to GitHub and Maven as releases
-    all               clear, download, build_parser, ..., deploy_gh
+    all               download, build_parser, ..., deploy_gh
     clear             clear some folders
+
+Options:
+    --force           forces all forceable commands to execute
+
+Commands "all", "create_jfr", "build_versions" can be forced
+by appending "=force" to them, e.g. "all=force".
+
+Environment variables:
+    LOG               set to "true" to print more information
 """
 
-CURRENT_DIR = os.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+CURRENT_DIR = os.path.abspath(
+    os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 CACHE_DIR = f"{CURRENT_DIR}/.cache"
 CACHE_TIME = 60 * 60 * 24  # one day
@@ -50,7 +60,9 @@ METADATA_FOLDER = f"{CURRENT_DIR}/metadata"
 ADDITIONAL_METADATA = f"{CURRENT_DIR}/additional.xml"
 RESOURCES_FOLDER = f"{CURRENT_DIR}/src/main/resources/metadata"
 JFC_FILE = f"{CACHE_DIR}/jfc.jfc"
-VERSION = "0.4"
+VERSION = "0.5"
+
+VERSIONS_WITH_AI_DESCRIPTIONS = [21]
 
 os.makedirs(JDK_ZIP_DIR, exist_ok=True)
 os.makedirs(JFR_FOLDER, exist_ok=True)
@@ -65,7 +77,9 @@ def log(msg: str):
 
 
 def execute(args: Union[List[str], str]):
-    subprocess.check_call(args, cwd=CURRENT_DIR, shell=isinstance(args, str), stdout=subprocess.DEVNULL)
+    subprocess.check_call(args, cwd=CURRENT_DIR, shell=isinstance(args, str),
+                          stdout=sys.stdout if LOG else subprocess.DEVNULL,
+                          stderr=sys.stderr if LOG else subprocess.DEVNULL)
 
 
 def download_file(url, path: str, retention: int = CACHE_TIME) -> str:
@@ -74,7 +88,8 @@ def download_file(url, path: str, retention: int = CACHE_TIME) -> str:
 
     cache_path = f"{CACHE_DIR}/{path}" if ".cache" not in path else path
 
-    if not os.path.exists(cache_path) or os.path.getmtime(cache_path) + retention <= time.time():
+    if not os.path.exists(cache_path) or os.path.getmtime(
+            cache_path) + retention <= time.time():
         log(f"Downloading {url} to {cache_path}")
         request.urlretrieve(url, cache_path)
     return cache_path
@@ -93,7 +108,7 @@ def download_zip(url, path: str, retention: int = CACHE_TIME) -> str:
     dir_path = path[:-4]
     if not os.path.exists(dir_path):
         execute(
-            ["unzip", "-o", path, "-d", dir_path, "*/src/jdk.jfr/*", "*/src/hotspot/share/jfr/metadata/metadata.xml"])
+            ["unzip", "-o", path, "-d", dir_path])
     return dir_path
 
 
@@ -101,28 +116,41 @@ def download_zip(url, path: str, retention: int = CACHE_TIME) -> str:
 class Repo:
     version: int
     name: str
+    url: str
+    """ GitHub url of the main folder """
 
 
 def get_repos() -> List[Repo]:
     """ Get all async-profiler versions """
     json = []
     for i in range(2):
-        json += download_json(f"https://api.github.com/orgs/openjdk/repos?per_page=100&page={i + 1}", f"repos{i}.json")
+        json += download_json(
+            f"https://api.github.com/orgs/openjdk/repos?per_page=100&page={i + 1}",
+            f"repos{i}.json")
     repos = []
+
+    def create_repo(version: int, name: str, repo_url: str) -> Repo:
+        r = Repo(version, name, repo_url)
+        tag, _ = get_latest_release_name_and_zip_url(r)
+        return Repo(version, name, repo_url + "/tree/" + tag.replace("+", "%2B"))
+
     for repo in json:
         name = repo["name"]
         if name.startswith("jdk") and name.endswith("u"):
             version = int(name[3:][:-1])
             if version >= 11:
-                repos.append(Repo(version, name))
+                repos.append(create_repo(version, name, repo["html_url"]))
     max_version = max(repos, key=lambda r: r.version).version
-    repos.append(Repo(max_version + 1, "jdk"))
+    repos.append(create_repo(max_version + 1, "jdk",
+                      "https://github.com/openjdk/jdk"))
     return sorted(repos, key=lambda r: r.version)
 
 
 def get_tags(repo: Repo) -> List[Dict[str, Any]]:
-    return [d for d in download_json(f"https://api.github.com/repos/openjdk/{repo.name}/tags?per_page=100",
-                                     f"tags_{repo.name}.json") if d["name"].startswith(f"jdk-{repo.version}")]
+    return [d for d in download_json(
+        f"https://api.github.com/repos/openjdk/{repo.name}/tags?per_page=100",
+        f"tags_{repo.name}.json") if
+            d["name"].startswith(f"jdk-{repo.version}")]
 
 
 def get_latest_release_name_and_zip_url(repo: Repo) -> Tuple[str, str]:
@@ -130,7 +158,8 @@ def get_latest_release_name_and_zip_url(repo: Repo) -> Tuple[str, str]:
     latest_name = names[0]
     if any("." in name for name in names):
         latest_name = [name for name in names if "." in name][0]
-    return latest_name, [d["zipball_url"] for d in get_tags(repo) if d["name"] == latest_name][0]
+    return latest_name, \
+    [d["zipball_url"] for d in get_tags(repo) if d["name"] == latest_name][0]
 
 
 def download_urls():
@@ -142,7 +171,8 @@ def download_urls():
 def download_latest_release(repo: Repo):
     """ Download the latest release for the given repo """
     name, url = get_latest_release_name_and_zip_url(repo)
-    path = download_zip(url, f"{JDK_ZIP_DIR}/{repo.name}_{name}.zip", retention=CACHE_TIME * 10)
+    path = download_zip(url, f"{JDK_ZIP_DIR}/{repo.name}_{name}.zip",
+                        retention=CACHE_TIME * 10)
     result_link = f"{CACHE_DIR}/{repo.name}"
     if os.path.exists(result_link):
         os.unlink(result_link)
@@ -152,7 +182,8 @@ def download_latest_release(repo: Repo):
 
 def download_benchmarks():
     download_file("https://github.com/renaissance-benchmarks"
-                  "/renaissance/releases/download/v0.14.1/renaissance-gpl-0.14.1.jar", RENAISSANCE_JAR)
+                  "/renaissance/releases/download/v0.14.1/renaissance-gpl-0.14.1.jar",
+                  RENAISSANCE_JAR)
 
 
 def repo_folder(repo: Repo) -> str:
@@ -165,7 +196,7 @@ def download_repo_if_not_exists(repo: Repo):
         download_latest_release(repo)
 
 
-def download():
+def download(force: bool = False):
     """ Download the latest release for every version """
     for repo in get_repos():
         download_latest_release(repo)
@@ -196,9 +227,11 @@ def list_gc_options() -> List[str]:
     """ List all GC options for the current JDK """
     global GC_OPTIONS
     if not GC_OPTIONS:
-        result = subprocess.check_output(["java", "-XX:+PrintFlagsFinal", "-version"],
-                                         stderr=subprocess.STDOUT).decode("utf-8")
-        GC_OPTIONS = [line.strip().split(" ")[1] for line in result.splitlines() if
+        result = subprocess.check_output(
+            ["java", "-XX:+PrintFlagsFinal", "-version"],
+            stderr=subprocess.STDOUT).decode("utf-8")
+        GC_OPTIONS = [line.strip().split(" ")[1] for line in result.splitlines()
+                      if
                       " Use" in line and "GC " in line and "Adaptive" not in line and "Maximum" not in line]
     return GC_OPTIONS
 
@@ -216,21 +249,29 @@ def create_jfc():
             f2.write("\n".join(lines))
 
 
-def create_jfr(gc_option: str = None):
+def create_jfr(gc_option: str = None, force: bool = False):
     create_jfc()
     if not os.path.exists(RENAISSANCE_JAR):
         download_benchmarks()
+    jfr_file = jfr_file_name(gc_option)
+    if os.path.exists(jfr_file) and not force and os.path.getmtime(
+            jfr_file) > os.path.getmtime(JFC_FILE):
+        print(f"JFR file {jfr_file} already exists and is up to date")
+        return
     if gc_option:
         print(f"Creating JFR file for GC option {gc_option}")
         try:
-            execute(["java", f"-XX:StartFlightRecording=filename={jfr_file_name(gc_option)},settings={JFC_FILE}",
-                    "-XX:+" + gc_option, "-jar", RENAISSANCE_JAR, "-t", "5", "-r", "1", "all"])
+            execute(["java",
+                     f"-XX:StartFlightRecording=filename={jfr_file},settings={JFC_FILE}",
+                     "-XX:+" + gc_option, "-jar", RENAISSANCE_JAR, "-t", "5",
+                     "-r", "1", "all"])
         except subprocess.CalledProcessError as ex:
             if not os.path.exists(jfr_file_name(gc_option)):
                 raise ex
             print(f"Caught a Java error", file=sys.stderr)
     else:
-        print(f"Creating JFR file for GC options: {', '.join(list_gc_options())}")
+        print(
+            f"Creating JFR file for GC options: {', '.join(list_gc_options())}")
         for gc_option in list_gc_options():
             create_jfr(gc_option)
     os.system(f"rm -fr '{CURRENT_DIR}/harness*'")
@@ -238,25 +279,32 @@ def create_jfr(gc_option: str = None):
 
 def create_jfr_if_needed(gc_option: str = None):
     if gc_option:
-        if not os.path.exists(jfr_file_name(gc_option)):
+        jfr_file = jfr_file_name(gc_option)
+        if not os.path.exists(jfr_file) or os.path.getsize(jfr_file) == 0:
             create_jfr(gc_option)
     else:
         for gc_option in list_gc_options():
             create_jfr_if_needed(gc_option)
 
 
-def meta_file_name(repo: Repo, wo_examples: bool = False) -> str:
-    return f"{METADATA_FOLDER}/metadata_{repo.version}{'_wo_examples' if wo_examples else ''}.xml"
+def meta_file_name(repo: Repo, wo_examples: bool = False,
+                   wo_ai_descriptions: bool = False) -> str:
+    return (f"{METADATA_FOLDER}/metadata_{repo.version}"
+            f"{'_wo_examples' if wo_examples else ''}"
+            f"{'wo_ai_descriptions' if wo_ai_descriptions else ''}.xml")
 
 
 def add_events(repo: Repo):
     metadata_file = meta_file_name(repo)
-    execute(f"java -cp {get_parser_or_build()} me.bechberger.collector.EventAdderKt {metadata_file} {repo_folder(repo)}"
-            f" {metadata_file}")
+    execute(
+        f"java -cp {get_parser_or_build()} me.bechberger.collector.EventAdderKt {metadata_file} {repo_folder(repo)} "
+        f"{repo.url} {metadata_file}")
 
 
 def java_version() -> str:
-    return subprocess.check_output(f"java -version 2>&1 | head -n 1 | cut -d '\"' -f 2", shell=True).decode("utf-8")
+    return subprocess.check_output(
+        f"java -version 2>&1 | head -n 1 | cut -d '\"' -f 2",
+        shell=True).decode("utf-8")
 
 
 def add_examples(repo: Repo):
@@ -265,42 +313,73 @@ def add_examples(repo: Repo):
         gc = gc_option[3:]
         label = gc
         description = f"Run of renaissance benchmark with {gc} on {java_version()}"
-        execute(f"java -cp {get_parser_or_build()} me.bechberger.collector.ExampleAdderKt {metadata_file} "
-                f"{label} \"{description}\" {jfr_file_name(gc_option)} {metadata_file}")
+        execute(
+            f"java -cp {get_parser_or_build()} me.bechberger.collector.ExampleAdderKt {metadata_file} "
+            f"{label} \"{description}\" {jfr_file_name(gc_option)} {metadata_file}")
 
 
 def add_additional_descriptions(repo: Repo):
     metadata_file = meta_file_name(repo)
-    execute(f"java -cp {get_parser_or_build()} me.bechberger.collector.AdditionalDescriptionAdderKt {metadata_file} "
-            f"{ADDITIONAL_METADATA} {metadata_file}")
+    log(f"Add additional descriptions for version {repo.version} via AI")
+    execute(
+        f"java -cp {get_parser_or_build()} me.bechberger.collector.AdditionalDescriptionAdderKt {metadata_file} "
+        f"{ADDITIONAL_METADATA} {metadata_file}")
 
 
-def build_version(repo: Repo):
+def add_ai_generated_descriptions(repo: Repo):
+    if (not os.path.exists(CURRENT_DIR + "/.openai.key") or
+            repo.version not in VERSIONS_WITH_AI_DESCRIPTIONS):
+        return
+    metadata_file = meta_file_name(repo)
+    log(f"Add AI generated descriptions for version {repo.version}")
+    execute(f"java -cp {get_parser_or_build()} "
+            "me.bechberger.collector.AIDescriptionAdderKt "
+            f"{metadata_file} "
+            f"{repo_folder(repo)} "
+            f"{metadata_file}")
+
+
+def build_version(repo: Repo, force: bool = False):
     create_jfr_if_needed()
     download_repo_if_not_exists(repo)
     meta_file = meta_file_name(repo)
+    meta_wo_examples = meta_file_name(repo, wo_examples=True)
+    meta_w_ai_descriptions = meta_file_name(repo)
     # copy metadata
+    generated_example_min_mtime = min(os.path.getmtime(jfr_file_name(gc_option))
+                                      for gc_option in list_gc_options())
     if os.path.exists(meta_file):
+        meta_file_mtime = os.path.getmtime(meta_file)
+        if not force and meta_file_mtime > \
+                max(os.path.getmtime(repo_folder(repo) + "/src"),
+                    generated_example_min_mtime):
+            print(f"Metadata file {meta_file} already exists and is up to date")
+            execute(f"cp {meta_file} {meta_wo_examples}")
+            return
         os.remove(meta_file)
-    execute(f"cp \"{repo_folder(repo)}/src/hotspot/share/jfr/metadata/metadata.xml\" {meta_file}")
+    execute(
+        f"cp \"{repo_folder(repo)}/src/hotspot/share/jfr/metadata/metadata.xml\" {meta_file}")
     print(f"Add events from JDK source code for version {repo.version}")
     add_events(repo)
     print(f"Add additional descriptions for version {repo.version}")
     add_additional_descriptions(repo)
-    meta_wo_examples = meta_file_name(repo, wo_examples=True)
     if os.path.exists(meta_wo_examples):
         os.remove(meta_wo_examples)
     execute(f"cp {meta_file} {meta_wo_examples}")
     print(f"Add examples from JFR files for version {repo.version}")
     add_examples(repo)
+    add_ai_generated_descriptions(repo)
 
 
-def build_versions():
+def build_versions(force: bool = False):
     for repo in get_repos():
-        build_version(repo)
+        build_version(repo, force=force)
     print("Add since and until")
-    args = ' '.join(f"{repo.version} \"{meta_file_name(repo)}\" \"{meta_file_name(repo)}\"" for repo in get_repos())
-    execute(f"java -cp {get_parser_or_build()} me.bechberger.collector.SinceAdderKt {args}")
+    args = ' '.join(
+        f"{repo.version} \"{meta_file_name(repo)}\" \"{meta_file_name(repo)}\""
+        for repo in get_repos())
+    execute(
+        f"java -cp {get_parser_or_build()} me.bechberger.collector.SinceAdderKt {args}")
 
 
 def build():
@@ -313,11 +392,14 @@ def build():
     for repo in get_repos():
         if not os.path.exists(meta_file_name(repo)):
             build_version(repo)
-        shutil.copy(meta_file_name(repo), f"{RESOURCES_FOLDER}/metadata_{repo.version}.xml")
+        shutil.copy(meta_file_name(repo),
+                    f"{RESOURCES_FOLDER}/metadata_{repo.version}.xml")
     with open(RESOURCES_FOLDER + "/versions", "w") as f:
         f.write("\n".join(str(repo.version) for repo in get_repos()))
     with open(RESOURCES_FOLDER + "/specific_versions", "w") as f:
-        f.write("\n".join(f"{repo.version}: {get_latest_release_name_and_zip_url(repo)[0]}" for repo in get_repos()))
+        f.write("\n".join(
+            f"{repo.version}: {get_latest_release_name_and_zip_url(repo)[0]}"
+            for repo in get_repos()))
         print("Build loader package")
         execute(f"mvn -f pom_loader.xml package assembly:single")
     with open(RESOURCES_FOLDER + "/time", "w") as f:
@@ -340,7 +422,9 @@ def clear():
 
 
 def get_changelog() -> str:
-    return Path(f"{CURRENT_DIR}/CHANGELOG.md").read_text().split("===")[1].split("\n\n")[0].strip()
+    return \
+    Path(f"{CURRENT_DIR}/CHANGELOG.md").read_text().split("===")[1].split(
+        "\n\n")[0].strip()
 
 
 def deploy_github():
@@ -364,21 +448,25 @@ def deploy_github():
         copy("target/jfreventcollector-full.jar", "jfreventcollector.jar")
         copy("target/jfreventcollection-full.jar", "jfreventcollection.jar")
         for repo in get_repos():
-            copy(f"metadata/metadata_{repo.version}.xml", f"metadata_{repo.version}.xml")
-            copy(f"metadata/metadata_{repo.version}_wo_examples.xml", f"metadata_{repo.version}_wo_examples.xml")
+            copy(f"metadata/metadata_{repo.version}.xml",
+                 f"metadata_{repo.version}.xml")
+            copy(f"metadata/metadata_{repo.version}_wo_examples.xml",
+                 f"metadata_{repo.version}_wo_examples.xml")
 
         flags_str = f"-F {changelog_file} -t '{title}' --latest"
         paths_str = " ".join(f'"{p}"' for p in paths)
         cmd = f"gh release create {VERSION} {flags_str} {paths_str}"
         try:
-            subprocess.check_call(cmd, shell=True, cwd=CURRENT_DIR, stdout=subprocess.DEVNULL,
+            subprocess.check_call(cmd, shell=True, cwd=CURRENT_DIR,
+                                  stdout=subprocess.DEVNULL,
                                   stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError:
             # this is either a real problem or it means that the release already exists
             # in the latter case, we can just update it
             cmd = f"gh release edit {VERSION} {flags_str}; gh release upload {VERSION} {paths_str} --clobber"
             try:
-                subprocess.check_call(cmd, shell=True, cwd=CURRENT_DIR, stdout=subprocess.DEVNULL,
+                subprocess.check_call(cmd, shell=True, cwd=CURRENT_DIR,
+                                      stdout=subprocess.DEVNULL,
                                       stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError:
                 os.system(
@@ -392,7 +480,8 @@ def deploy_maven(snapshot: bool = True):
         cmd = f"mvn " \
               f"-Dproject.suffix='{'-SNAPSHOT' if snapshot else ''}' -Dproject.vversion={VERSION} -f {pom} clean deploy"
         try:
-            subprocess.check_call(cmd, shell=True, cwd=CURRENT_DIR, stdout=subprocess.DEVNULL,
+            subprocess.check_call(cmd, shell=True, cwd=CURRENT_DIR,
+                                  stdout=subprocess.DEVNULL,
                                   stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError:
             os.system(
@@ -405,27 +494,66 @@ def deploy(snapshot: bool = True):
     deploy_github()
 
 
-def parse_cli_args() -> List[str]:
-    available_commands = ["versions", "download_urls", "download", "build_parser", "create_jfr", "build_versions",
-                          "build", "deploy_mvn", "deploy_gh", "deploy", "deploy_release", "clear", "all", "tags"]
+@dataclass
+class CLIArgs:
+    commands: List[str]
+    forced_commands: List[str]
+
+
+def parse_cli_args() -> CLIArgs:
+    available_commands = ["versions", "download_urls", "download",
+                          "build_parser", "create_jfr", "build_versions",
+                          "build", "deploy_mvn", "deploy_gh", "deploy",
+                          "deploy_release", "clear", "all", "tags"]
+    forcable_commands = ["all", "create_jfr", "build_versions"]
     commands = []
-    for arg in sys.argv[1:]:
-        if arg not in available_commands:
-            print(f"Unknown command: {arg}")
-            print(HELP)
-            sys.exit(1)
-        commands.append(arg)
+    forced_commands = []
+    for i, arg in enumerate(sys.argv[1:]):
+        if arg == "--force":
+            if i == len(sys.argv) - 1:
+                forced_commands = forcable_commands
+            else:
+                print("The --force option must be the last argument")
+                sys.exit(1)
+        else:
+            cmd, *args = arg.split("=")
+            if cmd not in available_commands:
+                print(f"Unknown command: {cmd}")
+                print(HELP)
+                sys.exit(1)
+            commands.append(cmd)
+            if len(args) == 1:
+                if args[0] == "force":
+                    if cmd not in forcable_commands:
+                        print(f"Command {cmd} cannot be forced")
+                        print(HELP)
+                        sys.exit(1)
+                    forced_commands.append(cmd)
+                else:
+                    print(f"Unknown argument: {args[0]} to command {cmd}")
+                    print(HELP)
+                    sys.exit(1)
+            elif len(args) > 1:
+                print(f"Too many arguments: {args} to command {cmd}")
+                print(HELP)
+                sys.exit(1)
     if not commands:
         print(HELP)
-    return commands
+    return CLIArgs(commands, forced_commands)
 
 
 def cli():
-    commands = parse_cli_args()
+    args = parse_cli_args()
+    commands = args.commands
+    forced = args.forced_commands
+
     coms = {
-        "versions": lambda: print(" ".join(str(r.version) for r in get_repos())),
+        "versions": lambda: print(
+            " ".join(str(r.version) for r in get_repos())),
         "tags": lambda: print(
-            "\n".join(f"{r.version}: {get_latest_release_name_and_zip_url(r)[0]}" for r in get_repos())),
+            "\n".join(
+                f"{r.version}: {get_latest_release_name_and_zip_url(r)[0]}" for
+                r in get_repos())),
         "download_urls": download_urls,
         "download": download,
         "build_parser": build_parser,
@@ -437,11 +565,18 @@ def cli():
         "deploy": lambda: deploy(snapshot=True),
         "deploy_release": lambda: deploy(snapshot=False),
         "clear": clear,
-        "all": lambda: [clear(), download(), build_parser(), create_jfr(), build_versions(), build(),
+        "all": lambda: [download(), build_parser(),
+                        create_jfr(force="create_jfr" in forced),
+                        build_versions(force="build_versions" in forced),
+                        build(),
                         deploy(snapshot=True)]
     }
     for command in commands:
-        coms[command]()
+        log(f"Execute command {command}")
+        if command in forced:
+            coms[command](force=True)
+        else:
+            coms[command]()
     clear_harness_and_launchers()
 
 

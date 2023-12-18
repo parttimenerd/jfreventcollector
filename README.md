@@ -10,6 +10,7 @@ The extended metadata includes
 - additional descriptions: please contribute yourself
 - versions of the JDK in which every event, field, ... is present
 - examples for events and their fields for the renaissance benchmark with different GCs
+- AI generated descriptions for events and their fields
 
 The event collection is presented at [SapMachine](https://sap.github.io/SapMachine/jfrevents/),
 created by [jfrevents-site-generator](https://github.com/parttimenerd/jfrevents-site-generator).
@@ -79,8 +80,23 @@ java -cp jfreventcollector.jar me.bechberger.collector.SinceAdderKt <smallest ve
 This adds additional descriptions to events and fields based on the passed metadata files.
 
 ```sh
-java -cp jfreventcollector.jar me.bechberger.collector.AdditionalDescriptionAdderKt <path to metadata.xml> \
-  <path to xml file with additional descriptions> <path to resulting metadata.xml>
+java -cp jfreventcollector.jar me.bechberger.collector.AdditionalDescriptionAdderKt <path to metadata.xml>\
+  <path to OpenJDK source> <path to result xml file>       
+```
+
+It requires an `.openai.key` file in the current directory that has to contain your OpenAI key and server url:
+
+```properties
+key=<your key>
+server=https://api.openai.com
+```
+
+## Usage of the AIDescriptionAdder
+
+This adds AI generated descriptions to events based on the metadata and JDK source code.
+
+```sh
+
 ```
 
 ## Usage of the releaser script
@@ -89,12 +105,13 @@ It should be run under the most recent released JDK version to obtain proper JFR
 
 ## Including the library in your project
 
-There is currently the release 0.4 available and the snapshot release is 0.4-SNAPSHOT.
+The current snapshot version is `0.5-SNAPSHOT`:
+
 ```xml
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jfreventcollector</artifactId>
-    <version>0.4</version>
+    <version>0.5-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -102,7 +119,7 @@ There is currently the release 0.4 available and the snapshot release is 0.4-SNA
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jfreventcollection</artifactId>
-    <version>0.4</version>
+    <version>0.5-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -131,11 +148,12 @@ Use the `bin/releaser.sh` script:
 
 ```sh
 Usage:
-    python3 releaser.py <command> ... <command>
+    python3 releaser.py <command> ... <command> [--force]
 
 Commands:
     versions          print all available JDK versions
     tags              print the current tag for all JDK versions
+    download_urls     print the latest source code download URLs for every JDK version
     download          download the latest source code for every JDK version
     build_parser      build the parser JAR
     create_jfr        create the JFR file for every available GC
@@ -145,8 +163,17 @@ Commands:
     deploy_gh         deploy the JARs and XML files to GitHub
     deploy            the two above
     deploy_release    deploy the JARs and XML files to GitHub and Maven as releases
+    all               download, build_parser, ..., deploy_gh
     clear             clear some folders
+    
+Options:
+    --force           forces all forceable commands to execute
 
+Commands "all", "create_jfr", "build_versions" can be forced 
+by appending "=force" to them, e.g. "all=force".
+
+Environment variables:
+    LOG               set to "true" to print more information
 ```
 
 ### Snapshots
@@ -161,4 +188,5 @@ Maven 3.6.3 seems to work fine.
 
 License
 -------
-GPLv2
+GPLv2, Copyright 2023 SAP SE or an SAP affiliate company, 
+Johannes Bechberger and plugin contributors

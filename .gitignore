@@ -36,3 +36,10 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+.openai.key
+*.jar
+bin/.idea
+harness-*
+spooned
+src/main/resources

@@ -15,3 +15,8 @@
 ===
 - Updated data set to include the latest JDK update releases
 - Add `fakeEndTime` field to mark `endTime` values as fake (equal to `startTime` on purpose)
+- Add list of supporting JDKs to every event and type
+
+0.5
+===
+- Add the ability to generate additional description for every event via GPT3.5
