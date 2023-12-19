@@ -293,12 +293,13 @@ class AIDescriptionAdder(val openJDKFolder: Path, val metadata: me.bechberger.co
             Keep field names lowercase and in backticks.
             Don't use headings.
             Don't repeat yourself.
+            Keep it short.
         """.trimIndent()
 
         fun createPrompt(event: Event, context: String): String {
             val name = event.name.removePrefix("jdk.")
             val fields = event.fields.joinToString("\n") {
-                "  - ${it.name} (type: ${it.type})" + (if (it.description != null) ": ${it.description}" else "") + " " + (if (it.label != "") ": ${it.label}" else "")
+                "  - ${it.name}" + (if (it.description != null) ": ${it.description}" else "") + " " + (if (it.label != "") ": ${it.label}" else "")
             }
             val flags = mapOf(
                 "experimental" to event.experimental,
