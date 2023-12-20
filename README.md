@@ -79,6 +79,17 @@ java -cp jfreventcollector.jar me.bechberger.collector.SinceAdderKt <smallest ve
 ## Usage of the AdditionalDescriptionAdder
 This adds additional descriptions to events and fields based on the passed metadata files.
 
+This adds additional descriptions to events and fields based on the passed metadata files.
+
+```sh
+java -cp jfreventcollector.jar me.bechberger.collector.AdditionalDescriptionAdderKt <path to metadata.xml> \
+  <path to xml file with additional descriptions> <path to resulting metadata.xml>
+```
+
+## Usage of the AIDescriptionAdder
+
+This adds AI generated descriptions to events based on the metadata and JDK source code.
+
 ```sh
 java -cp jfreventcollector.jar me.bechberger.collector.AdditionalDescriptionAdderKt <path to metadata.xml>\
   <path to OpenJDK source> <path to result xml file>       
@@ -90,14 +101,8 @@ It requires an `.openai.key` file in the current directory that has to contain y
 key=<your key>
 server=https://api.openai.com
 ```
-
-## Usage of the AIDescriptionAdder
-
-This adds AI generated descriptions to events based on the metadata and JDK source code.
-
-```sh
-
-```
+See this [blog post](https://mostlynerdless.de/blog/2023/12/20/using-ai-to-create-jfr-event-descriptions/)
+for more information.
 
 ## Usage of the releaser script
 This script helps to build the extended metadata file for every JDK version (starting with JDK11).
