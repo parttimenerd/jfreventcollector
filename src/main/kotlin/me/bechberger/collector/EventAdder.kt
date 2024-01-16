@@ -13,48 +13,14 @@ import spoon.reflect.declaration.CtClass
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
+import me.bechberger.collector.xml.Metadata
+import spoon.reflect.code.CtExpression
+import spoon.reflect.code.CtLiteral
+import spoon.reflect.code.CtNewArray
 import kotlin.io.path.writeText
 import kotlin.system.exitProcess
 
 class AdderException(message: String) : RuntimeException(message)
-
-data class ClassHierarchyNode(
-    val name: String,
-    val event: Event,
-    val parentName: String?,
-    val realClass: Boolean,
-    var parent: ClassHierarchyNode? = null
-) {
-    val mergedEvent: Event
-        get() {
-            return parent?.mergedEvent?.let {
-                it.merge(event)
-            } ?: event
-        }
-}
-
-val CtAnnotation<*>.stringValue: String
-    get() {
-        try {
-            return this.getValueAsString("value")
-        } catch (e: Exception) {
-            /** Handle @Name(Type.EVENT_NAME_PREFIX + "ActiveSetting") */
-            val value = this.values.get("value")!!.toString().replace(Regex("[\" +]"), "")
-            if (value.contains("Type.EVENT_NAME_PREFIX")) {
-                return value.replace("Type.EVENT_NAME_PREFIX", "")
-            }
-            throw AdderException("Unknown annotation value: $value for annotation $this")
-        }
-    }
-
-val CtAnnotation<*>.stringArray: List<String>
-    get() = (this.getValueAsObject("value")!!.also { assert(it is Array<*>) } as Array<String>).toList()
-
-val CtAnnotation<*>.booleanValue: Boolean
-    get() = this.values["value"]!!.toString().toBooleanStrict()
-
-val CtAnnotation<*>.value
-    get() = this.values["value"]?.toString() ?: throw AdderException("No value for annotation $this")
 
 /**
  * Add parsed events and info from found configurations
@@ -97,31 +63,17 @@ class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.
         event.name = ""
         event.category = ""
         klass.annotations.forEach { ann ->
-            when (ann.name) {
-                "Name" -> {
-                    val stringValue = ann.stringValue
-                    if ("." in stringValue && !stringValue.startsWith("jdk.")) {
-                        throw AdderException("Event name $stringValue does not start with jdk.")
-                    }
-                    event.name = stringValue.substringAfter("jdk.")
-                }
-                "Label" -> event.label = ann.stringValue
-                "Description" -> event.description = ann.stringValue
-                "Category" -> event.category = ann.stringArray.joinToString(", ")
-                "Experimental" -> event.experimental = true
-                "Thread" -> event.thread = ann.booleanValue
-                "StackTrace" -> event.stackTrace = ann.booleanValue
-                "Enabled" -> event.enabled = ann.booleanValue
-                "Internal" -> event.internal = ann.booleanValue
-                "Throttle" -> event.throttle = ann.booleanValue
-                "Cutoff" -> event.cutoff = ann.booleanValue
-                "Registered", "MirrorEvent" -> {}
-                else -> {
-                    println("Unknown annotation ${ann.name} on class ${klass.qualifiedName}")
-                }
-            }
+            processClassAnnotation(ann, event, klass, ) { AdderException(it) }
         }
         event.fields.addAll(
+            processFields(metadata, klass) { AdderException(it) }
+        )
+        event.source = openJDKFolder.relativize(sourcePath).toString()
+        return event
+    }
+
+    companion object {
+        fun processFields(metadata: Metadata, klass: CtClass<*>, exceptionCreator: (String) -> Any) =
             klass.fields.filter { it.isPublic && !it.isStatic && !it.isShadow }.map {
                 val field = Field()
                 field.name = it.simpleName
@@ -144,6 +96,7 @@ class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.
                                 field.contentType = contentType.name
                             }
                         }
+
                         "Description" -> field.description = ann.stringValue
                         "Experimental" -> field.experimental = true
                         "TransitionTo" -> field.transition = Transition.TO
@@ -158,21 +111,82 @@ class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.
                                 "X509 Certificate Id"
                             ).name
                         }
+
+                        "BooleanFlag" -> {}
+                        "MemoryAddress" -> {}
+
                         else -> {
                             if (ann.annotationType.`package`.qualifiedName.startsWith("jdk.jfr")) {
-                                println(
+                                throw exceptionCreator(
                                     "Unknown annotation ${ann.name} on field ${it.simpleName} " +
-                                        "in class ${klass.qualifiedName}"
-                                )
+                                            "in class ${klass.qualifiedName}"
+                                ) as Throwable
                             }
                         }
                     }
                 }
                 field
             }
-        )
-        event.source = openJDKFolder.relativize(sourcePath).toString()
-        return event
+
+        fun processClassAnnotation(
+            ann: CtAnnotation<out Annotation>,
+            event: Event,
+            klass: CtClass<*>,
+            allowGraalNames: Boolean = false,
+            exceptionCreator: (String) -> Any
+        ) {
+            when (ann.name) {
+                "Name" -> {
+                    val stringValue = ann.stringValue
+                    if ("." in stringValue && !stringValue.startsWith("jdk.") && (!allowGraalNames || !stringValue.startsWith(
+                            "org.graalvm.compiler.truffle."
+                        ))) {
+                        throw AdderException("Event name $stringValue does not start with jdk.")
+                    }
+                    event.name = stringValue.substringAfter("jdk.")
+                }
+
+                "Label" -> event.label = ann.stringValue
+                "Description" -> event.description = ann.stringValue
+                "Category" -> event.category = ann.stringArray.joinToString(", ")
+                "Experimental" -> event.experimental = true
+                "Thread" -> event.thread = ann.booleanValue
+                "StackTrace" -> event.stackTrace = ann.booleanValue
+                "Enabled" -> event.enabled = ann.booleanValue
+                "Internal" -> event.internal = ann.booleanValue
+                "Throttle" -> event.throttle = ann.booleanValue
+                "Cutoff" -> event.cutoff = ann.booleanValue
+                "Registered", "MirrorEvent" -> {}
+                "Period" -> event.period = ann.stringValue
+                "RemoveFields" -> {
+                    // annotation that can remove the fields "duration", "eventThread" and "startTime"
+                    val removeFields = ann.stringArray
+                    for (field in event.fields.toList()) {
+                        if (field.name in removeFields) {
+                            event.fields.remove(field)
+                        }
+                    }
+                    for (removed in removeFields) {
+                        when (removed) {
+                            "duration" -> event.duration = false
+                            "eventThread" -> event.thread = false
+                            "startTime" -> event.startTime = false
+                            "stackTrace" -> event.stackTrace = false
+                            else -> throw exceptionCreator("Unknown field $removed in RemoveFields annotation") as Throwable
+                        }
+                    }
+                }
+                "StackFilter" -> {
+                    event.stackFilter = ann.stringArray
+                }
+
+                else -> {
+                    if (ann.annotationType.`package`.qualifiedName.startsWith("jdk.jfr")) {
+                        throw exceptionCreator("Unknown annotation ${ann.name} on class ${klass.qualifiedName}") as Throwable
+                    }
+                }
+            }
+        }
     }
 
     private fun findEventDescendants(nodes: Map<String, ClassHierarchyNode>): Set<ClassHierarchyNode> {
@@ -249,7 +263,8 @@ class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.
 
 fun main(args: Array<String>) {
     if (args.size != 4) {
-        println("Usage: EventAdder <path to metadata.xml> <path to OpenJDK source> <url to main folder> <path to result xml file>")
+        println("Usage: EventAdder <path to metadata.xml> <path to OpenJDK source> " +
+                "<url to main folder> <path to result xml file>")
         exitProcess(1)
     }
     val metadataPath = Paths.get(args[0])

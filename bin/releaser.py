@@ -15,8 +15,9 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Union, Tuple, Set
+from typing import Any, Dict, List, Union, Tuple, Set, Optional
 from urllib import request
+from urllib.error import HTTPError
 
 HELP = """
 Usage:
@@ -60,7 +61,10 @@ METADATA_FOLDER = f"{CURRENT_DIR}/metadata"
 ADDITIONAL_METADATA = f"{CURRENT_DIR}/additional.xml"
 RESOURCES_FOLDER = f"{CURRENT_DIR}/src/main/resources/metadata"
 JFC_FILE = f"{CACHE_DIR}/jfc.jfc"
-VERSION = "0.5"
+GRAAL_REPO = "oracle/graal"
+TOKEN_FILE = f"{CURRENT_DIR}/.github.token"
+
+VERSION = "0.6"
 
 VERSIONS_WITH_AI_DESCRIPTIONS = [21]
 
@@ -74,6 +78,13 @@ LOG = os.getenv("LOG", "false") == "true"
 def log(msg: str):
     if LOG:
         print(msg)
+
+
+def get_github_token() -> Optional[str]:
+    if not os.path.exists(TOKEN_FILE):
+        return None
+    with open(TOKEN_FILE) as f:
+        return f.read().strip()
 
 
 def execute(args: Union[List[str], str]):
@@ -91,7 +102,13 @@ def download_file(url, path: str, retention: int = CACHE_TIME) -> str:
     if not os.path.exists(cache_path) or os.path.getmtime(
             cache_path) + retention <= time.time():
         log(f"Downloading {url} to {cache_path}")
-        request.urlretrieve(url, cache_path)
+        headers = {}
+        token = get_github_token()
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        req = request.Request(url, headers=headers)
+        with request.urlopen(req) as response, open(cache_path, 'wb') as out_file:
+            shutil.copyfileobj(response, out_file)
     return cache_path
 
 
@@ -117,6 +134,7 @@ class Repo:
     version: int
     name: str
     url: str
+    graal_version: Optional["GraalVersion"] = None
     """ GitHub url of the main folder """
 
 
@@ -132,7 +150,7 @@ def get_repos() -> List[Repo]:
     def create_repo(version: int, name: str, repo_url: str) -> Repo:
         r = Repo(version, name, repo_url)
         tag, _ = get_latest_release_name_and_zip_url(r)
-        return Repo(version, name, repo_url + "/tree/" + tag.replace("+", "%2B"))
+        return Repo(version, name, repo_url + "/tree/" + tag.replace("+", "%2B"), get_graal_version(version))
 
     for repo in json:
         name = repo["name"]
@@ -166,10 +184,12 @@ def download_urls():
     for repo in get_repos():
         latest_name, zip_url = get_latest_release_name_and_zip_url(repo)
         print(f"{repo.version}: {zip_url}")
+    for v in get_graal_versions():
+        print(f"{v.jdk_version}: {v.zip_url}")
 
 
 def download_latest_release(repo: Repo):
-    """ Download the latest release for the given repo """
+    """ Download the latest release for the given repo and graal """
     name, url = get_latest_release_name_and_zip_url(repo)
     path = download_zip(url, f"{JDK_ZIP_DIR}/{repo.name}_{name}.zip",
                         retention=CACHE_TIME * 10)
@@ -177,7 +197,75 @@ def download_latest_release(repo: Repo):
     if os.path.exists(result_link):
         os.unlink(result_link)
     os.symlink(next(Path(path).glob("*")), result_link)
-    return result_link
+
+
+@dataclass
+class GraalVersion:
+    tag: str
+    jdk_version: int
+    graal_version: str
+    url: str
+    """ GitHub url of the main folder """
+    zip_url: str
+
+
+def get_graal_vm_version_from_tag(tag: str) -> str:
+    # look into https://github.com/oracle/graal/blob/$tag/compiler/mx.compiler/suite.py
+    # for the version
+    # look for first "  "version" : "23.1.1","
+    # and return the version
+    with open(download_file(f"https://raw.githubusercontent.com/{GRAAL_REPO}/{tag}/compiler/mx.compiler/suite.py", f"graal_{tag}_suite.py")) as f:
+        for line in f.readlines():
+            if '"version"' in line:
+                return line.replace("'", '"').split('"')[3]
+    assert False, "Could not find version"
+
+
+def get_graal_versions() -> List[GraalVersion]:
+    # download tags paged from https://api.github.com/repos/{GRAAL_REPO}/tags
+    # and combine json lists
+
+    tags = []
+    for page in range(5):
+        raw = download_json(f"https://api.github.com/repos/{GRAAL_REPO}/tags?per_page=100&page={page + 1}",
+                            f"tags_graal_{page}.json")
+        tags += raw
+        if not raw:
+            break
+
+    # tag format of considered tags "jdk-<version>.<rest>"
+    # use for every version the latest tag and return the GraalVersion object
+    versions = {}
+    for tag in tags:
+        if tag["name"].startswith("jdk-"):
+            version = int(tag["name"][4:].split(".")[0])
+            if version in versions:
+                continue
+            main_url: str = f"https://github.com/oracle/graal/blob/{tag['name']}"
+            vm_version = get_graal_vm_version_from_tag(tag["name"])
+            versions[version] = GraalVersion(tag["name"], version, vm_version,
+                                             main_url, tag["zipball_url"])
+    return sorted(versions.values(), key=lambda v: v.jdk_version)
+
+
+def get_graal_version(version: int) -> Optional[GraalVersion]:
+    return ([v for v in get_graal_versions() if v.jdk_version == version] + [None])[0]
+
+
+def has_graal_version(version: int) -> bool:
+    return get_graal_version(version) is not None
+
+
+def download_graal_version(version: GraalVersion) -> Path:
+    """ Download and unpack the graal version's zip file """
+    path = download_zip(version.zip_url, f"{JDK_ZIP_DIR}/graal_{version.tag}.zip",
+                        retention=CACHE_TIME * 10)
+    result_link = graal_folder(version)
+    if os.path.exists(result_link):
+        os.unlink(result_link)
+    os.symlink(next(Path(path).glob("*")), result_link)
+    return Path(result_link)
+
 
 
 def download_benchmarks():
@@ -190,16 +278,27 @@ def repo_folder(repo: Repo) -> str:
     return f"{CACHE_DIR}/{repo.name}"
 
 
+def graal_folder(version: GraalVersion) -> str:
+    return f"{CACHE_DIR}/graal_{version.tag}"
+
+
 def download_repo_if_not_exists(repo: Repo):
     """ Download the latest release for the given repo if it does not exist """
     if not os.path.exists(repo_folder(repo)):
         download_latest_release(repo)
+    if has_graal_version(repo.version):
+        graal_version = get_graal_version(repo.version)
+        if not graal_folder(graal_version):
+            download_graal_version(graal_version)
 
 
 def download(force: bool = False):
     """ Download the latest release for every version """
     for repo in get_repos():
         download_latest_release(repo)
+        graal = get_graal_version(repo.version)
+        if graal:
+            download_graal_version(graal)
     download_benchmarks()
 
 
@@ -301,6 +400,15 @@ def add_events(repo: Repo):
         f"{repo.url} {metadata_file}")
 
 
+def add_graal_events(repo: Repo):
+    metadata_file = meta_file_name(repo)
+    graal_version = get_graal_version(repo.version)
+    execute(
+        f"java -cp {get_parser_or_build()} me.bechberger.collector.GraalEventAdderKt {metadata_file} {graal_folder(graal_version)} "
+        f"{graal_version.url} {graal_version.graal_version} {graal_version.tag} {metadata_file}")
+
+
+
 def java_version() -> str:
     return subprocess.check_output(
         f"java -version 2>&1 | head -n 1 | cut -d '\"' -f 2",
@@ -361,6 +469,9 @@ def build_version(repo: Repo, force: bool = False):
         f"cp \"{repo_folder(repo)}/src/hotspot/share/jfr/metadata/metadata.xml\" {meta_file}")
     print(f"Add events from JDK source code for version {repo.version}")
     add_events(repo)
+    if has_graal_version(repo.version):
+        print(f"Add events from Graal source code for version {repo.version}")
+        add_graal_events(repo)
     print(f"Add additional descriptions for version {repo.version}")
     add_additional_descriptions(repo)
     if os.path.exists(meta_wo_examples):
@@ -581,4 +692,12 @@ def cli():
 
 
 if __name__ == '__main__':
-    cli()
+    try:
+        cli()
+    except HTTPError as ex:
+        if ex.code == 403:
+            print(
+                "GitHub API rate limit exceeded, please store a GitHub token "
+                f"in {TOKEN_FILE} to increase the limit")
+        print(f"Caught HTTP error: {ex}")
+        sys.exit(1)

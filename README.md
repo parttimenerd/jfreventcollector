@@ -110,13 +110,13 @@ It should be run under the most recent released JDK version to obtain proper JFR
 
 ## Including the library in your project
 
-The current snapshot version is `0.5-SNAPSHOT`:
+The current snapshot version is `0.6-SNAPSHOT`:
 
 ```xml
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jfreventcollector</artifactId>
-    <version>0.5-SNAPSHOT</version>
+    <version>0.6-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -124,7 +124,7 @@ The current snapshot version is `0.5-SNAPSHOT`:
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jfreventcollection</artifactId>
-    <version>0.5-SNAPSHOT</version>
+    <version>0.6-SNAPSHOT</version>
 </dependency>
 ```
 

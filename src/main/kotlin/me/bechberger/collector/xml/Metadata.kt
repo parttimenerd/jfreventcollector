@@ -89,9 +89,20 @@ class Metadata {
             field.addAll(value)
         }
 
+    class GraalVMInfo(
+        @JacksonXmlProperty(isAttribute = true) val version: String,
+        @JacksonXmlProperty(isAttribute = true) val url: String,
+        @JacksonXmlProperty(isAttribute = true) val tag: String
+    )
+
     /** GitHub URL of the main folder*/
     @JacksonXmlProperty(localName = "url", isAttribute = true)
     var url: String? = null
+
+    @JacksonXmlProperty(localName = "GraalVMInfo")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    var graalVMInfo: GraalVMInfo? = null
+
 
     fun copy(): Metadata {
         val meta = Metadata()
@@ -178,7 +189,7 @@ class Metadata {
 
     fun getEvent(name: String): Event? {
         return eventsCache.get(name) ?: run {
-            val found = events.firstOrNull { it.name == name }
+            val found = events.firstOrNull { it.name == name || "jdk.${it.name}" == name }
             if (found != null) {
                 eventsCache[name] = found
             }
@@ -237,6 +248,13 @@ class Metadata {
 }
 
 class Event() : Type<EventExample>() {
+
+    companion object {
+        val GRAAL_ONLY = "GRAAL_ONLY"
+        val JDK_ONLY = "JDK_ONLY"
+        val JDK_AND_GRAAL = "JDK_AND_GRAAL"
+    }
+
     /** Category, subcategory, subsubcategory */
     @JacksonXmlProperty(isAttribute = true)
     lateinit var category: String
@@ -306,7 +324,14 @@ class Event() : Type<EventExample>() {
     var enabled: Boolean = true
 
     @JacksonXmlProperty(isAttribute = true)
-    var period: Period? = null
+    var period: String? = null
+
+    /**
+     * Omitted methods/classes in the stacktrace, see {@link jdk.jfr.events.StackFilter},
+     * only avaiable in JDK 22+
+     */
+    @JacksonXmlProperty(localName = "StackFilter")
+    var stackFilter: List<String> = ArrayList()
 
     @JacksonXmlProperty(localName = "Configuration")
     @JacksonXmlElementWrapper(useWrapping = false)
@@ -318,8 +343,14 @@ class Event() : Type<EventExample>() {
     @JacksonXmlProperty(isAttribute = true)
     var source: String? = null
 
+    @JacksonXmlProperty(isAttribute = true)
+    var graalSource: String? = null
+
     @JacksonXmlProperty(localName = "AIGeneratedDescription")
     var aiGeneratedDescription: AIGeneratedDescription? = null
+
+    @JacksonXmlProperty(isAttribute = true)
+    var includedInVariant: String = JDK_ONLY
 
     fun categories(): List<String> = category.split(", ")
 
@@ -337,14 +368,17 @@ class Event() : Type<EventExample>() {
         throttle: Boolean = false,
         cutoff: Boolean = false,
         enabled: Boolean = true,
-        period: Period? = null,
+        period: String? = null,
+        stackFilter: List<String> = ArrayList(),
         fields: MutableList<Field> = ArrayList(),
         configurations: MutableList<SingleEventConfiguration> = ArrayList(),
         source: String? = null,
+        graalSource: String? = null,
         examples: MutableSet<EventExample> = mutableSetOf(),
         additionalDescription: String? = null,
         appearedIn: MutableSet<Int> = mutableSetOf(),
         aiGeneratedDescription: AIGeneratedDescription? = null,
+        includedInVariant: String = JDK_ONLY
     ) : this() {
         this.name = name
         this.category = category
@@ -363,13 +397,16 @@ class Event() : Type<EventExample>() {
         this.cutoff = cutoff
         this.enabled = enabled
         this.period = period
+        this.stackFilter = stackFilter
         this.fields = fields
         this.configurations = configurations
         this.source = source
+        this.graalSource = graalSource
         this.examples = examples
         this.additionalDescription = additionalDescription
         this.appearedIn = appearedIn
         this.aiGeneratedDescription = aiGeneratedDescription
+        this.includedInVariant = includedInVariant
     }
 
     fun merge(other: Event): Event {
@@ -396,14 +433,25 @@ class Event() : Type<EventExample>() {
             cutoff || other.cutoff,
             other.enabled,
             period ?: other.period,
+            (stackFilter + other.stackFilter).toMutableList(),
             (fields + other.fields).toMutableList(),
             (configurations + other.configurations).toMutableList(),
             merge(source, other.source),
+            merge(graalSource, other.graalSource),
             (examples + other.examples).toMutableSet(),
             (additionalDescription ?: "") + (other.additionalDescription ?: ""),
             (appearedIn + other.appearedIn).toMutableSet(),
             aiGeneratedDescription ?: other.aiGeneratedDescription,
+            mergeVariant(includedInVariant, other.includedInVariant)
         )
+    }
+
+    private fun mergeVariant(first: String, second: String): String {
+        return when {
+            first == GRAAL_ONLY && second == GRAAL_ONLY -> GRAAL_ONLY
+            first == JDK_ONLY && second == JDK_ONLY -> JDK_ONLY
+            else -> JDK_AND_GRAAL
+        }
     }
 
     override fun toString() = objectToXml(this)
@@ -429,6 +477,20 @@ class Event() : Type<EventExample>() {
                     }
                 },
             )
+        }
+    }
+
+    @JsonIgnore
+    fun isGraalOnly() = includedInVariant == GRAAL_ONLY
+    @JsonIgnore
+    fun isJDKOnly() = includedInVariant == JDK_ONLY
+    @JsonIgnore
+    fun isInJDKAndGraal() = includedInVariant == JDK_AND_GRAAL
+
+    fun includedInGraal() {
+        includedInVariant = when (includedInVariant) {
+            JDK_ONLY -> JDK_AND_GRAAL
+            else -> GRAAL_ONLY
         }
     }
 }
@@ -551,14 +613,6 @@ class SingleEventConfiguration : WithJDKs<SingleEventConfiguration> {
         super.setSupportedJDKs(perVersion)
         settings.forEach { setting -> setting.setSupportedJDKs(perVersion.map { (v, s) -> v to s?.let { s.settings.find { it.name == setting.name } } }) }
     }
-}
-
-enum class Period {
-    @JsonProperty("everyChunk")
-    EVERY_CHUNK,
-
-    @JsonProperty("endChunk")
-    END_CHUNK,
 }
 
 open class AbstractType<E : Example> : WithJDKs<AbstractType<E>>() {
