@@ -88,6 +88,7 @@ def get_github_token() -> Optional[str]:
 
 
 def execute(args: Union[List[str], str]):
+    log(f"Execute: {args}")
     subprocess.check_call(args, cwd=CURRENT_DIR, shell=isinstance(args, str),
                           stdout=sys.stdout if LOG else subprocess.DEVNULL,
                           stderr=sys.stderr if LOG else subprocess.DEVNULL)
@@ -166,7 +167,7 @@ def get_repos() -> List[Repo]:
 
 def get_tags(repo: Repo) -> List[Dict[str, Any]]:
     return [d for d in download_json(
-        f"https://api.github.com/repos/openjdk/{repo.name}/tags?per_page=100",
+        f"https://api.github.com/repos/openjdk/{repo.name}/tags?per_page=1000",
         f"tags_{repo.name}.json") if
             d["name"].startswith(f"jdk-{repo.version}")]
 
@@ -534,7 +535,7 @@ def clear():
 
 def get_changelog() -> str:
     return \
-    Path(f"{CURRENT_DIR}/CHANGELOG.md").read_text().split("===")[1].split(
+    Path(f"{CURRENT_DIR}/CHANGELOG.md").read_text().split("##")[1].split(
         "\n\n")[0].strip()
 
 

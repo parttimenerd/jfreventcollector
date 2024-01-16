@@ -24,7 +24,11 @@ class GraalAdderException(message: String) : RuntimeException(message)
  * @param metadata metadata to extend with the found info
  */
 class GraalEventAdder(
-    private val openJDKFolder: Path, val metadata: Metadata, val url: String, private val graalVersion: String, private val graalTag: String
+    private val openJDKFolder: Path,
+    val metadata: Metadata,
+    val url: String,
+    private val graalVersion: String,
+    private val graalTag: String
 ) {
 
     /** find "jfr" folders */
@@ -70,13 +74,12 @@ class GraalEventAdder(
     /** returns the number of discovered events */
     private fun processJfrEventClass(): Int {
         val jfrEventClass = parseJfrEventClass()
-        val events =
-            jfrEventClass.fields.filter { it.type.simpleName == "JfrEvent" }.map { it.defaultExpression }.map {
-                    if (it !is CtInvocation<*> || it.executable.simpleName != "create") {
-                        throw GraalAdderException("Unexpected event creation $it")
-                    }
-                    it.arguments.first()
-                }.map { (it as CtLiteral<*>).value as String }
+        val events = jfrEventClass.fields.filter { it.type.simpleName == "JfrEvent" }.map { it.defaultExpression }.map {
+            if (it !is CtInvocation<*> || it.executable.simpleName != "create") {
+                throw GraalAdderException("Unexpected event creation $it")
+            }
+            it.arguments.first()
+        }.map { (it as CtLiteral<*>).value as String }
         events.forEach { event ->
             metadata.getEvent(event)?.includedInGraal() ?: println("event $event not found in metadata")
         }
@@ -140,7 +143,10 @@ class GraalEventAdder(
                 klass.qualifiedName,
                 event = parseClass(path, klass),
                 parentName = klass.superclass?.qualifiedName?.let { name ->
-                    if (name.startsWith("jdk.jfr") || name.startsWith("org.")) name else "${klass.`package`.qualifiedName}.$name"
+                    if (name.startsWith("jdk.jfr") ||
+                        name.startsWith("org.") ||
+                        name.startsWith("com."))
+                        name else "${klass.`package`.qualifiedName}.$name"
                 },
                 realClass = !klass.isAbstract
             )
@@ -156,8 +162,7 @@ class GraalEventAdder(
         val eventDescendants = findEventDescendants(nodes)
         val rootNodes = eventDescendants.filter {
             it.descendants.isEmpty() && it.realClass && it.name !in setOf(
-                "EveryChunkNativePeriodicEvents",
-                "EndChunkNativePeriodicEvents"
+                "EveryChunkNativePeriodicEvents", "EndChunkNativePeriodicEvents"
             )
         }
         return rootNodes

@@ -9,10 +9,12 @@
 ### Changed
 - Period enum changed to raw string to be more flexible
 
+
 ## [0.5]
 
 ### Added
 - The ability to generate additional description for every event via GPT3.5
+
 
 ## [0.4]
 
@@ -23,6 +25,7 @@
 ### Changed
 - Updated data set to include the latest JDK update releases
 
+
 ## [0.3]
 
 ### Added
@@ -31,10 +34,12 @@
 ### Changed
 - Updated data set to include the latest JDK update releases
 
+
 ## [0.2]
 
 ### Changed
 - since/until to just a lists of JDKs (`jdks`)
+
 
 ## [0.1]
 
