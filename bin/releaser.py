@@ -55,7 +55,7 @@ CURRENT_DIR = os.path.abspath(
 CACHE_DIR = f"{CURRENT_DIR}/.cache"
 CACHE_TIME = 60 * 60 * 24  # one day
 RENAISSANCE_JAR = f"{CACHE_DIR}/renaissance.jar"
-JDK_ZIP_DIR = f"{CACHE_DIR}/.cache/zip"
+JDK_ZIP_DIR = f"{CACHE_DIR}/zip"
 JFR_FOLDER = f"{CURRENT_DIR}/jfr"
 METADATA_FOLDER = f"{CURRENT_DIR}/metadata"
 ADDITIONAL_METADATA = f"{CURRENT_DIR}/additional.xml"
@@ -125,6 +125,7 @@ def download_zip(url, path: str, retention: int = CACHE_TIME) -> str:
     path = download_file(url, path, retention=retention * 100)
     dir_path = path[:-4]
     if not os.path.exists(dir_path):
+        log("Unzipping " + path)
         execute(
             ["unzip", "-o", path, "-d", dir_path])
     return dir_path
@@ -239,7 +240,8 @@ def get_graal_versions() -> List[GraalVersion]:
     versions = {}
     for tag in tags:
         if tag["name"].startswith("jdk-"):
-            version = int(tag["name"][4:].split(".")[0])
+            version_number = tag["name"][4:].replace("+", ".").split(".")[0]
+            version = int(version_number)
             if version in versions:
                 continue
             main_url: str = f"https://github.com/oracle/graal/blob/{tag['name']}"
