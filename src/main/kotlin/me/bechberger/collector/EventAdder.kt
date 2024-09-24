@@ -192,6 +192,7 @@ class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.
     private fun findEventDescendants(nodes: Map<String, ClassHierarchyNode>): Set<ClassHierarchyNode> {
         val hierarchyNodes = nodes.values
         val eventDescendants = mutableSetOf(nodes["jdk.jfr.Event"]!!)
+        nodes["jdk.jfr.internal.MirrorEvent"]?.let { eventDescendants.add(it) }
         val remainingNodes = hierarchyNodes.toMutableSet()
         remainingNodes.removeAll(eventDescendants)
         var somethingChanged = true
@@ -206,7 +207,9 @@ class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.
             }
         }
         for (node in remainingNodes) {
-            println("skipping ${node.name} because it is not a descendant of jdk.jfr.Event")
+            if (node.parent != null && node.parent!!.name !in setOf("jdk.jfr.consumer.RecordedObject", "jdk.jfr.internal.jfc.model.XmlElement")) {
+                println("skipping ${node.name} because it is not a descendant of jdk.jfr.Event or jdk.jfr.internal.MirrorEvent, but ${node.parentName}")
+            }
         }
         return eventDescendants
     }
@@ -250,10 +253,15 @@ class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.
     }
 
     fun process(): me.bechberger.collector.xml.Metadata {
+        maybeEventFiles().map { it.toPath() to parse(it) }.filter { it.second != null }
+            .map { it.first to it.second!! }.forEach {
+                println("Processing ${it.first}")
+            }
         val eventNodes = createHierarchy(
             maybeEventFiles().map { it.toPath() to parse(it) }.filter { it.second != null }
                 .map { it.first to it.second!! }
         )
+
         val meta = metadata.copy().also { it.events.addAll(eventNodes.map { event -> event.mergedEvent }) }
         meta.url = url
         addConfigurations(meta, configurations())
