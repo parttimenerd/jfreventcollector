@@ -119,15 +119,25 @@ def download_json(url, path: str) -> Any:
         return json.load(f)
 
 
-def download_zip(url, path: str, retention: int = CACHE_TIME) -> str:
+def download_zip(url, path: str, retention: int = CACHE_TIME, max_tries: int = 3) -> str:
     """ Download the ZIP file from the URL and save it to the given path, return the path to unpacked directory """
     assert path.endswith(".zip")
     path = download_file(url, path, retention=retention * 100)
     dir_path = path[:-4]
     if not os.path.exists(dir_path):
         log("Unzipping " + path)
-        execute(
+        try:
+            execute(
             ["unzip", "-o", path, "-d", dir_path])
+        except subprocess.CalledProcessError:
+            if max_tries == 0:
+                print(f"Could not unzip {path}")
+                raise
+            log("retry downloading and unzipping " + path)
+            # if the unzip fails, we try to redownload the file and try again
+            shutil.rmtree(dir_path, ignore_errors=True)
+            os.remove(path)
+            return download_zip(url, path, retention=retention, max_tries=max_tries - 1)
     return dir_path
 
 
@@ -196,9 +206,13 @@ def download_latest_release(repo: Repo):
     path = download_zip(url, f"{JDK_ZIP_DIR}/{repo.name}_{name}.zip",
                         retention=CACHE_TIME * 10)
     result_link = f"{CACHE_DIR}/{repo.name}"
-    if os.path.exists(result_link):
-        os.unlink(result_link)
-    os.symlink(next(Path(path).glob("*")), result_link)
+    try:
+        os.remove(result_link)
+    except FileNotFoundError:
+        pass
+    assert not os.path.exists(result_link)
+    src = next(Path(path).glob("*"))
+    os.symlink(src, result_link)
 
 
 @dataclass
