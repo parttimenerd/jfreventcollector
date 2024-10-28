@@ -193,5 +193,5 @@ Maven 3.6.3 seems to work fine.
 
 License
 -------
-GPLv2, Copyright 2023 SAP SE or an SAP affiliate company, 
-Johannes Bechberger and plugin contributors
+Apache 2.0, Copyright 2023 SAP SE or an SAP affiliate company, 
+Johannes Bechberger and contributors
