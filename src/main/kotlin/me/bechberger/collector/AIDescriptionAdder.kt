@@ -35,7 +35,7 @@ class AIDescriptionAdder(val openJDKFolder: Path, val metadata: me.bechberger.co
     private fun String.countTokens(): Int {
         val registry: EncodingRegistry = Encodings.newDefaultEncodingRegistry()
         val enc = registry.getEncoding(EncodingType.CL100K_BASE)
-        return enc.encode(this).size
+        return enc.encode(this).size()
     }
 
     data class ContextLines(val file: Path, val lineNumbers: List<Int>, val content: String)

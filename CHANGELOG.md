@@ -5,10 +5,11 @@
 ### Added
 - GraalVM events
 - StackFilter annotations, which are used to filter out methods/classes from the stack traces, as event field stackFilter
+- Source code snippets for every event
 
 ### Changed
 - Period enum changed to raw string to be more flexible
-
+- Updated dependencies
 
 ## [0.5]
 

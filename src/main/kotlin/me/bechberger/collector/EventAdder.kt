@@ -29,7 +29,7 @@ class AdderException(message: String) : RuntimeException(message)
  * @param url url to the main folder of the OpenJDK source code on GitHUb
  * @param metadata metadata to extend with the found info
  */
-class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.xml.Metadata, val url: String) {
+class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.xml.Metadata, val url: String, val permanentUrl: String) {
 
     fun configurations(): List<Configuration> {
         val configurations = mutableListOf<Configuration>()
@@ -264,22 +264,24 @@ class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.
 
         val meta = metadata.copy().also { it.events.addAll(eventNodes.map { event -> event.mergedEvent }) }
         meta.url = url
+        meta.permanentUrl = permanentUrl
         addConfigurations(meta, configurations())
         return meta
     }
 }
 
 fun main(args: Array<String>) {
-    if (args.size != 4) {
+    if (args.size != 5) {
         println("Usage: EventAdder <path to metadata.xml> <path to OpenJDK source> " +
-                "<url to main folder> <path to result xml file>")
+                "<url to main folder> <permanent url to main folder> <path to result xml file>")
         exitProcess(1)
     }
     val metadataPath = Paths.get(args[0])
     val sourcePath = Paths.get(args[1])
     val url = args[2]
+    val permanentUrl = args[3]
     val metadata = metadataPath.readXmlAs(me.bechberger.collector.xml.Metadata::class.java)
-    val eventAdder = EventAdder(sourcePath, metadata, url)
+    val eventAdder = EventAdder(sourcePath, metadata, url, permanentUrl)
     val meta = eventAdder.process()
     val out = args[args.size - 1]
     if (out == "-") {

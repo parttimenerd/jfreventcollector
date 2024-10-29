@@ -58,22 +58,24 @@ java -jar jfreventcollector.jar samples/profile.jfr
 This adds the events found in the passed JDK source folder.
 
 ```sh
-java -cp jfreventcollector.jar me.bechberger.collector.EventAdderKt <path to metadata.xml> <path to OpenJDK source> <path to result xml file>
+java -cp jfreventcollector.jar me.bechberger.collector.EventAdderKt <path to metadata.xml> \
+    <path to OpenJDK source> <path to result xml file> <url of main folder> <permanent url of main folder>
 ```
 
 ## Usage of the Example Adder
 This adds examples from the passed JFR file to the passed metadata file.
 
 ```sh
-java -cp jfreventcollector.jar me.bechberger.collector.ExampleAdderKt <path to metadata.xml> <label of file> <description of file> <JFR file> ... \
-    <path to resulting metadata.xml>
+java -cp jfreventcollector.jar me.bechberger.collector.ExampleAdderKt <path to metadata.xml> <label of file> \
+    <description of file> <JFR file> ... <path to resulting metadata.xml>
 ```
 
 ## Usage of the SinceAdder
 This adds `jdks` attributes to fields and events based on the passed metadata files.
 
 ```sh
-java -cp jfreventcollector.jar me.bechberger.collector.SinceAdderKt <smallest version> <metadata file> <metadata output file> ...
+java -cp jfreventcollector.jar me.bechberger.collector.SinceAdderKt <smallest version> \
+     <metadata file> <metadata output file> ...
 ```
 
 ## Usage of the AdditionalDescriptionAdder
@@ -91,7 +93,7 @@ java -cp jfreventcollector.jar me.bechberger.collector.AdditionalDescriptionAdde
 This adds AI generated descriptions to events based on the metadata and JDK source code.
 
 ```sh
-java -cp jfreventcollector.jar me.bechberger.collector.AdditionalDescriptionAdderKt <path to metadata.xml>\
+java -cp jfreventcollector.jar me.bechberger.collector.AdditionalDescriptionAdderKt <path to metadata.xml> \
   <path to OpenJDK source> <path to result xml file>       
 ```
 
@@ -103,6 +105,16 @@ server=https://api.openai.com
 ```
 See this [blog post](https://mostlynerdless.de/blog/2023/12/20/using-ai-to-create-jfr-event-descriptions/)
 for more information.
+
+## Usage of the SourceCodeContextAdder
+This adds source code that is possibly related to an event to the metadata.
+This includes the path, the line numbers with potential matches and the surrounding code.
+
+```sh
+java -cp jfreventcollector.jar me.bechberger.collector.SourceCodeContextAdderKt <path to metadata.xml> \
+  <path to OpenJDK source> <path to result xml file> <optional: context lines per match, default 21> \
+  <optional: max lines of context, default 500>
+````
 
 ## Usage of the releaser script
 This script helps to build the extended metadata file for every JDK version (starting with JDK11).

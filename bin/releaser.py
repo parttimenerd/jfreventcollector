@@ -128,7 +128,7 @@ def download_zip(url, path: str, retention: int = CACHE_TIME, max_tries: int = 3
         log("Unzipping " + path)
         try:
             execute(
-            ["unzip", "-o", path, "-d", dir_path])
+            ["unzip", "-q", "-o", path, "-d", dir_path])
         except subprocess.CalledProcessError:
             if max_tries == 0:
                 print(f"Could not unzip {path}")
@@ -146,6 +146,7 @@ class Repo:
     version: int
     name: str
     url: str
+    permanent_url: str
     graal_version: Optional["GraalVersion"] = None
     """ GitHub url of the main folder """
 
@@ -160,9 +161,11 @@ def get_repos() -> List[Repo]:
     repos = []
 
     def create_repo(version: int, name: str, repo_url: str) -> Repo:
-        r = Repo(version, name, repo_url)
-        tag, _ = get_latest_release_name_and_zip_url(r)
-        return Repo(version, name, repo_url + "/tree/" + tag.replace("+", "%2B"), get_graal_version(version))
+        r = Repo(version, name, repo_url, repo_url)
+        latest = get_latest_release_name_and_zip_url(r)
+        return Repo(version, name, repo_url + "/tree/" + latest.name.replace("+", "%2B"),
+                    repo_url + "/tree/" + latest.commit,
+                    get_graal_version(version))
 
     for repo in json:
         name = repo["name"]
@@ -182,28 +185,33 @@ def get_tags(repo: Repo) -> List[Dict[str, Any]]:
         f"tags_{repo.name}.json") if
             d["name"].startswith(f"jdk-{repo.version}")]
 
+@dataclass
+class LatestReleaseInfo:
+    name: str
+    zip_url: str
+    commit: str
 
-def get_latest_release_name_and_zip_url(repo: Repo) -> Tuple[str, str]:
+def get_latest_release_name_and_zip_url(repo: Repo) -> LatestReleaseInfo:
     names = [d["name"] for d in get_tags(repo)]
     latest_name = names[0]
     if any("." in name for name in names):
         latest_name = [name for name in names if "." in name][0]
-    return latest_name, \
-    [d["zipball_url"] for d in get_tags(repo) if d["name"] == latest_name][0]
+    d = [d for d in get_tags(repo) if d["name"] == latest_name][0]
+    return LatestReleaseInfo(latest_name, d["zipball_url"], d["commit"]["sha"])
 
 
 def download_urls():
     for repo in get_repos():
-        latest_name, zip_url = get_latest_release_name_and_zip_url(repo)
-        print(f"{repo.version}: {zip_url}")
+        latest = get_latest_release_name_and_zip_url(repo)
+        print(f"{repo.version}: {latest.zip_url}")
     for v in get_graal_versions():
         print(f"{v.jdk_version}: {v.zip_url}")
 
 
 def download_latest_release(repo: Repo):
     """ Download the latest release for the given repo and graal """
-    name, url = get_latest_release_name_and_zip_url(repo)
-    path = download_zip(url, f"{JDK_ZIP_DIR}/{repo.name}_{name}.zip",
+    latest = get_latest_release_name_and_zip_url(repo)
+    path = download_zip(latest.zip_url, f"{JDK_ZIP_DIR}/{repo.name}_{latest.name}.zip",
                         retention=CACHE_TIME * 10)
     result_link = f"{CACHE_DIR}/{repo.name}"
     try:
@@ -404,9 +412,11 @@ def create_jfr_if_needed(gc_option: str = None):
 
 
 def meta_file_name(repo: Repo, wo_examples: bool = False,
-                   wo_ai_descriptions: bool = False) -> str:
+                   wo_ai_descriptions: bool = False,
+                   only_events: bool = False) -> str:
     return (f"{METADATA_FOLDER}/metadata_{repo.version}"
             f"{'_wo_examples' if wo_examples else ''}"
+            f"{'_events' if only_events else ''}"
             f"{'wo_ai_descriptions' if wo_ai_descriptions else ''}.xml")
 
 
@@ -414,7 +424,7 @@ def add_events(repo: Repo):
     metadata_file = meta_file_name(repo)
     execute(
         f"java -cp {get_parser_or_build()} me.bechberger.collector.EventAdderKt {metadata_file} {repo_folder(repo)} "
-        f"{repo.url} {metadata_file}")
+        f"{repo.url} {repo.permanent_url} {metadata_file}")
 
 
 def add_graal_events(repo: Repo):
@@ -464,12 +474,21 @@ def add_ai_generated_descriptions(repo: Repo):
             f"{metadata_file}")
 
 
+def add_source_code_context(repo: Repo):
+    metadata_file = meta_file_name(repo)
+    log(f"Add source code context for version {repo.version}")
+    execute(f"java -cp {get_parser_or_build()} "
+            "me.bechberger.collector.SourceCodeContextAdderKt "
+            f"{metadata_file} "
+            f"{repo_folder(repo)} "
+            f"{metadata_file}")
+
+
 def build_version(repo: Repo, force: bool = False):
     create_jfr_if_needed()
     download_repo_if_not_exists(repo)
     meta_file = meta_file_name(repo)
     meta_wo_examples = meta_file_name(repo, wo_examples=True)
-    meta_w_ai_descriptions = meta_file_name(repo)
     # copy metadata
     generated_example_min_mtime = min(os.path.getmtime(jfr_file_name(gc_option))
                                       for gc_option in list_gc_options())
@@ -486,6 +505,7 @@ def build_version(repo: Repo, force: bool = False):
         f"cp \"{repo_folder(repo)}/src/hotspot/share/jfr/metadata/metadata.xml\" {meta_file}")
     print(f"Add events from JDK source code for version {repo.version}")
     add_events(repo)
+    shutil.copy(meta_file, meta_file_name(repo, only_events=True))
     if has_graal_version(repo.version):
         print(f"Add events from Graal source code for version {repo.version}")
         add_graal_events(repo)
@@ -496,6 +516,8 @@ def build_version(repo: Repo, force: bool = False):
     execute(f"cp {meta_file} {meta_wo_examples}")
     print(f"Add examples from JFR files for version {repo.version}")
     add_examples(repo)
+    print(f"Add source code context for version {repo.version}")
+    add_source_code_context(repo)
     add_ai_generated_descriptions(repo)
 
 
@@ -526,7 +548,7 @@ def build():
         f.write("\n".join(str(repo.version) for repo in get_repos()))
     with open(RESOURCES_FOLDER + "/specific_versions", "w") as f:
         f.write("\n".join(
-            f"{repo.version}: {get_latest_release_name_and_zip_url(repo)[0]}"
+            f"{repo.version}: {get_latest_release_name_and_zip_url(repo).name}"
             for repo in get_repos()))
         print("Build loader package")
         execute(f"mvn -f pom_loader.xml package assembly:single")
@@ -638,11 +660,7 @@ def parse_cli_args() -> CLIArgs:
     forced_commands = []
     for i, arg in enumerate(sys.argv[1:]):
         if arg == "--force":
-            if i == len(sys.argv) - 1:
-                forced_commands = forcable_commands
-            else:
-                print("The --force option must be the last argument")
-                sys.exit(1)
+            forced_commands = forcable_commands
         else:
             cmd, *args = arg.split("=")
             if cmd not in available_commands:
@@ -680,7 +698,7 @@ def cli():
             " ".join(str(r.version) for r in get_repos())),
         "tags": lambda: print(
             "\n".join(
-                f"{r.version}: {get_latest_release_name_and_zip_url(r)[0]}" for
+                f"{r.version}: {get_latest_release_name_and_zip_url(r).name}" for
                 r in get_repos())),
         "download_urls": download_urls,
         "download": download,
