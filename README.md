@@ -112,7 +112,7 @@ This includes the path, the line numbers with potential matches and the surround
 
 ```sh
 java -cp jfreventcollector.jar me.bechberger.collector.SourceCodeContextAdderKt <path to metadata.xml> \
-  <path to OpenJDK source> <path to result xml file> <optional: context lines per match, default 21> \
+  <path to OpenJDK source> <path to result xml file> <optional: context lines per match, default 25> \
   <optional: max lines of context, default 500>
 ````
 

@@ -5,6 +5,7 @@ import java.nio.file.Paths
 import me.bechberger.collector.xml.EventSourceContext
 import me.bechberger.collector.xml.readXmlAs
 import java.nio.file.Files
+import java.util.function.Predicate
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.extension
 import kotlin.io.path.readText
@@ -22,6 +23,7 @@ class SourceCodeContextAdder(val openJDKFolder: Path, val metadata: me.bechberge
         fun startsWith(s: String) = trim().startsWith(s)
         fun startsWithUntrimmed(s: String) = content.startsWith(s)
         fun trim() = content.trim()
+        fun trim(omit: (Char) -> Boolean) = content.trim(omit)
         fun matches(re: Regex) = re.containsMatchIn(content)
     }
 
@@ -39,7 +41,6 @@ class SourceCodeContextAdder(val openJDKFolder: Path, val metadata: me.bechberge
                 val firstProperLine = if (rawLines[0].startsWith("/*"))
                     rawLines.indexOfFirst { it.startsWith("*/") } + 1 else 0
                 val lines = rawLines.subList(firstProperLine, rawLines.size)
-                    .filter { if (isJava) !it.startsWithUntrimmed("import ") else !it.startsWithUntrimmed("#include ") }
 
                 val eventLinesRaw =
                     lines.mapIndexed { index, s -> if (s.matches(re)) index to s else -1 to s}.filter { it.first != -1 }
@@ -72,7 +73,17 @@ class SourceCodeContextAdder(val openJDKFolder: Path, val metadata: me.bechberge
                 val mergedContexts = mutableListOf<ContextLines>()
                 var currentContext = contextsForThisPath.first()
 
+                val regex = Regex("(|import .*;|#include .*|};?|#endif|#if|[A-Za-z_]+_END|return .*)")
+
                 fun addCurrentContextToMerged() {
+                    // drop the first and last lines while they are empty
+                    while (currentContext.first().trim().matches(regex)) {
+                        currentContext = currentContext.drop(1)
+                    }
+                    while (currentContext.last().trim().isEmpty()) {
+                        currentContext = currentContext.dropLast(1)
+                    }
+
                     val startLine = currentContext.first().line
                     val endLine = currentContext.last().line
                     val content = currentContext.joinToString("\n") { it.content }
@@ -147,9 +158,9 @@ class SourceCodeContextAdder(val openJDKFolder: Path, val metadata: me.bechberge
                 event.context =  context.getContextLines(contextLines, maxLines).map {
                     EventSourceContext().apply {
                         path = openJDKFolder.relativize(it.file).toString()
-                        lines = it.lineNumbers
-                        startLine = it.startLine
-                        endLine = it.endLine
+                        lines = it.lineNumbers.map { it + 1 }
+                        startLine = it.startLine + 1
+                        endLine = it.endLine + 1
                         snippet = it.content
                     }
                 }.toMutableList()
@@ -159,8 +170,9 @@ class SourceCodeContextAdder(val openJDKFolder: Path, val metadata: me.bechberge
     }
 
     companion object {
-        fun cppEventUsageRegexp(event: String) =
-            Regex("(^|[^a-zA-Z_])Event${event.removePrefix("jdk.")}[&*]?[^a-zA-Z0-9_]+")
+        fun cppEventUsageRegexp(event: String) = event.removePrefix("jdk.").let { name ->
+            Regex("(^|[^a-zA-Z_])(Event$name|${name}Event)[&*]?[^a-zA-Z0-9_]+")
+        }
 
         fun javaEventUsageRegexp(event: String) =
             Regex("(^|[^a-zA-Z_.])${event.removePrefix("jdk.")}Event")
@@ -171,14 +183,14 @@ fun main(args: Array<String>) {
     if (args.size < 3 || args.size > 5) {
         println(
             """  
-            Usage: SourceCodeContextAdder <path to metadata.xml> <path to OpenJDK source> <path to result xml file> <optional: context lines per match, default 21> <optional: max lines of context, default 500>
+            Usage: SourceCodeContextAdder <path to metadata.xml> <path to OpenJDK source> <path to result xml file> <optional: context lines per match, default 25> <optional: max lines of context, default 500>
         """.trimMargin()
         )
         return
     }
     val metadataPath = Paths.get(args[0])
     val sourcePath = Paths.get(args[1])
-    val contextLines = if (args.size > 3) args[3].toInt() else 20
+    val contextLines = if (args.size > 3) args[3].toInt() else 25
     val maxLines = if (args.size > 4) args[4].toInt() else 500
     val metadata = metadataPath.readXmlAs(me.bechberger.collector.xml.Metadata::class.java)
     val eventAdder = SourceCodeContextAdder(sourcePath, metadata)
