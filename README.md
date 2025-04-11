@@ -1,3 +1,5 @@
+[![REUSE status](https://api.reuse.software/badge/github.com/SAP/sapmachine-jfreventcollector)](https://api.reuse.software/info/github.com/SAP/sapmachine-jfreventcollector)
+
 JFR Event Collector
 =====================
 
