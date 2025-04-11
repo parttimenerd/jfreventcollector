@@ -95,6 +95,7 @@ def execute(args: Union[List[str], str]):
 
 
 def download_file(url, path: str, retention: int = CACHE_TIME) -> str:
+    print(f"Download {url} to {path}")
     if not os.path.exists(CACHE_DIR):
         os.makedirs(CACHE_DIR)
 
@@ -102,14 +103,18 @@ def download_file(url, path: str, retention: int = CACHE_TIME) -> str:
 
     if not os.path.exists(cache_path) or os.path.getmtime(
             cache_path) + retention <= time.time():
-        log(f"Downloading {url} to {cache_path}")
         headers = {}
         token = get_github_token()
         if token:
             headers["Authorization"] = f"Bearer {token}"
         req = request.Request(url, headers=headers)
-        with request.urlopen(req) as response, open(cache_path, 'wb') as out_file:
-            shutil.copyfileobj(response, out_file)
+        try:
+            with request.urlopen(req) as response, open(cache_path, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+        except ex:
+            if isinstance(ex, HTTPError) and ex.code == 401:
+                print(
+                    f"Got a HTTP error {ex.code}, please check your GitHub token, it might not be valid")
     return cache_path
 
 
