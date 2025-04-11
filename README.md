@@ -15,7 +15,7 @@ The extended metadata includes
 - AI generated descriptions for events and their fields
 
 The event collection is presented at [SapMachine](https://sap.github.io/SapMachine/jfrevents/),
-created by [jfrevents-site-generator](https://github.com/parttimenerd/jfrevents-site-generator).
+created by [jfrevents-site-generator](https://github.com/SAP/sapmachine-jfrevents-site-generator).
 
 ## Want to contribute?
 
@@ -216,7 +216,7 @@ Maven 3.6.3 seems to work fine.
 
 ## Security / Disclosure
 If you find any bug that may be a security problem, please follow our instructions at
-[in our security policy](https://github.com/SAP/<your-project>/security/policy) on how to report it.
+[in our security policy](https://github.com/SAP/sapmachine-jfreventcollector/security/policy) on how to report it.
 Please do not create GitHub issues for security-related doubts or problems.
 
 ## Code of Conduct
