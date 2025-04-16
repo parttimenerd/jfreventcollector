@@ -15,7 +15,7 @@ The extended metadata includes
 - AI generated descriptions for events and their fields
 
 The event collection is presented at [SapMachine](https://sap.github.io/SapMachine/jfrevents/),
-created by [jfrevents-site-generator](https://github.com/SAP/sapmachine-jfrevents-site-generator).
+created by [jfrevents-site-generator](https://github.com/SAP/sapmachinejfrevents-site-generator).
 
 ## Want to contribute?
 

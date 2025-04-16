@@ -116,7 +116,7 @@
                 <executions>
                     <execution>
                         <id>attach-javadoc</id>
-                        <phase>deploy</phase>
+                        <phase>package</phase>
                         <goals>
                             <goal>jar</goal>
                         </goals>
@@ -136,7 +136,6 @@
                         <goals>
                             <goal>dokka</goal>
                             <goal>javadoc</goal>
-                            <goal>javadocJar</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -201,7 +200,7 @@
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.6.0</version><!-- Check for latest version at Maven Central -->
+                <version>0.7.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>ossrh</publishingServerId>

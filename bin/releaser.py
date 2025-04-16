@@ -95,7 +95,6 @@ def execute(args: Union[List[str], str]):
 
 
 def download_file(url, path: str, retention: int = CACHE_TIME) -> str:
-    print(f"Download {url} to {path}")
     if not os.path.exists(CACHE_DIR):
         os.makedirs(CACHE_DIR)
 
@@ -103,6 +102,7 @@ def download_file(url, path: str, retention: int = CACHE_TIME) -> str:
 
     if not os.path.exists(cache_path) or os.path.getmtime(
             cache_path) + retention <= time.time():
+        print(f"Download {url} to {path}")
         headers = {}
         token = get_github_token()
         if token:
@@ -634,10 +634,11 @@ def deploy_maven(snapshot: bool = True):
         pom = f"pom{suffix}.xml"
         cmd = f"mvn " \
               f"-Dproject.suffix='{'-SNAPSHOT' if snapshot else ''}' -Dproject.vversion={VERSION} -f {pom} clean deploy"
+        print(f"Deploy maven: {cmd}")
         try:
             subprocess.check_call(cmd, shell=True, cwd=CURRENT_DIR,
-                                  stdout=subprocess.DEVNULL,
-                                  stderr=subprocess.DEVNULL)
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
         except subprocess.CalledProcessError:
             os.system(
                 f"cd {CURRENT_DIR}; {cmd}")
