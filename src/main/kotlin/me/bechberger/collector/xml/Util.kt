@@ -18,9 +18,6 @@ abstract class WithJDKs<T> {
     var jdks: List<Int>
         get() = jdksBacking.split(",").map { Integer.parseInt(it) }
         set(value) {
-            if (value.isEmpty()) {
-                System.err.println("Error")
-            }
             jdksBacking = value.joinToString(",") { it.toString() }
         }
 

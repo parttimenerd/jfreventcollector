@@ -154,7 +154,7 @@ class EventAdder(val openJDKFolder: Path, val metadata: me.bechberger.collector.
                 "StackTrace" -> event.stackTrace = ann.booleanValue
                 "Enabled" -> event.enabled = ann.booleanValue
                 "Internal" -> event.internal = ann.booleanValue
-                "Throttle" -> event.throttle = ann.booleanValue
+                "Throttle" -> event.throttle = true
                 "Cutoff" -> event.cutoff = ann.booleanValue
                 "Registered", "MirrorEvent" -> {}
                 "Period" -> event.period = ann.stringValue

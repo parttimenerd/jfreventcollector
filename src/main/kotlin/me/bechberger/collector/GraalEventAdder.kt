@@ -173,10 +173,15 @@ class GraalEventAdder(
             .map { it.first to it.second!! })
         // print every event node with information
         metadata.events.addAll(eventNodes.map { it.mergedEvent })
-        val oldEventCount = processJfrEventClass()
-        val newEventCount = eventNodes.size
-        println("Found $oldEventCount existing events and $newEventCount new events")
-        metadata.graalVMInfo = Metadata.GraalVMInfo(graalVersion, url, graalTag)
+        try {
+            val oldEventCount = processJfrEventClass()
+            val newEventCount = eventNodes.size
+            println("Found $oldEventCount existing events and $newEventCount new events")
+            metadata.graalVMInfo = Metadata.GraalVMInfo(graalVersion, url, graalTag, foundEvents = true)
+        } catch (e: GraalAdderException) {
+            println("Error processing JfrEvent class: ${e.message}, you might ignore this")
+            metadata.graalVMInfo = Metadata.GraalVMInfo(graalVersion, url, graalTag, foundEvents = false)
+        }
         return metadata
     }
 }

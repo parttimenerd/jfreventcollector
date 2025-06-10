@@ -68,7 +68,7 @@ class EventSetting : WithJDKs<EventSetting>() {
     lateinit var name: String
 
     @JacksonXmlText
-    lateinit var value: String
+    var value: String? = null
 
     @JacksonXmlProperty(isAttribute = true)
     var control: String? = null

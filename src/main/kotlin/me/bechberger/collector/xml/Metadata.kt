@@ -92,7 +92,8 @@ class Metadata {
     class GraalVMInfo(
         @JacksonXmlProperty(isAttribute = true) val version: String,
         @JacksonXmlProperty(isAttribute = true) val url: String,
-        @JacksonXmlProperty(isAttribute = true) val tag: String
+        @JacksonXmlProperty(isAttribute = true) val tag: String,
+        @JacksonXmlProperty(isAttribute = true) val foundEvents: Boolean = true,
     )
 
     /** GitHub URL of the main folder*/
@@ -490,6 +491,7 @@ class Event() : Type<EventExample>() {
                         )
                     }
                 },
+                perVersion
             )
         }
     }
@@ -698,15 +700,20 @@ open class Type<E : Example> : AbstractType<E>() {
     override fun setSupportedJDKs(perVersion: List<Pair<Int, AbstractType<E>?>>) {
         super.setSupportedJDKs(perVersion)
         fields.forEach { field ->
-            field.setSupportedJDKs(
-                perVersion.map { (v, t) ->
-                    v to t?.let {
-                        (t as Type).getField(
-                            field.name,
-                        )
-                    }
-                },
-            )
+            val allFields = perVersion.map { (v, t) ->
+                v to t?.let {
+                    (t as Type).getField(
+                        field.name,
+                    )
+                }
+            }
+            if (allFields.filter { it.second != null }.isNotEmpty()) {
+                field.setSupportedJDKs(allFields)
+            } else {
+                // I don't know why the fields are empty of the type, but it happens
+                field.jdks = perVersion.filter { it.second != null }.map { it.first }.sorted()
+            }
+
         }
     }
 
@@ -767,6 +774,16 @@ class Field : WithJDKs<Field>() {
 
     fun addAdditionalDescription(other: Field) {
         additionalDescription = other.additionalDescription
+    }
+
+    fun setSupportedJDKs(perVersion: List<Pair<Int, Field?>>, perVersionParent: List<Pair<Int, Any?>> = perVersion) {
+        val per = perVersion.filter { it.second != null }.map { it.first }.sorted()
+        if (per.isNotEmpty()) {
+            jdks = per
+        } else {
+            // if no JDKs are set, we use the JDKs from the parent
+            jdks = perVersionParent.filter { it.second != null }.map { it.first }.sorted()
+        }
     }
 }
 
