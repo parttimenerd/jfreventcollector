@@ -124,13 +124,13 @@ It should be run under the most recent released JDK version to obtain proper JFR
 
 ## Including the library in your project
 
-The current snapshot version is `0.6-SNAPSHOT`:
+The current snapshot version is `0.7-SNAPSHOT`:
 
 ```xml
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jfreventcollector</artifactId>
-    <version>0.6-SNAPSHOT</version>
+    <version>0.7-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -138,7 +138,7 @@ The current snapshot version is `0.6-SNAPSHOT`:
 <dependency>
     <groupId>me.bechberger</groupId>
     <artifactId>jfreventcollection</artifactId>
-    <version>0.6-SNAPSHOT</version>
+    <version>0.7-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -149,8 +149,9 @@ To use snapshots, you have to add the snapshot repository:
 ```xml
 <repositories>
     <repository>
-        <id>snapshots</id>
-        <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+        <name>Central Portal Snapshots</name>
+        <id>central-portal-snapshots</id>
+        <url>https://central.sonatype.com/repository/maven-snapshots/</url>
         <releases>
             <enabled>false</enabled>
         </releases>

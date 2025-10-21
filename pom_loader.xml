@@ -39,7 +39,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <java.version>11</java.version>
-        <project.vversion>0.6</project.vversion>
+        <project.vversion>0.7</project.vversion>
         <project.suffix>-SNAPSHOT</project.suffix>
     </properties>
 
@@ -195,12 +195,12 @@
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.7.0</version>
+                <version>0.8.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>ossrh</publishingServerId>
                     <autoPublish>true</autoPublish>
-                    <waitUntil>uploaded</waitUntil>
+                    <waitUntil>published</waitUntil>
                 </configuration>
             </plugin>
         </plugins>
@@ -243,4 +243,14 @@
             <version>1.7.32</version>
         </dependency>
     </dependencies>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://central.sonatype.com</url>
+        </repository>
+    </distributionManagement>
 </project>

@@ -52,6 +52,7 @@ Environment variables:
 CURRENT_DIR = os.path.abspath(
     os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
+JAVA_VERSION = "21" # Java version to use for building and running
 CACHE_DIR = f"{CURRENT_DIR}/.cache"
 CACHE_TIME = 60 * 60 * 24  # one day
 RENAISSANCE_JAR = f"{CACHE_DIR}/renaissance.jar"
@@ -64,7 +65,7 @@ JFC_FILE = f"{CACHE_DIR}/jfc.jfc"
 GRAAL_REPO = "oracle/graal"
 TOKEN_FILE = f"{CURRENT_DIR}/.github.token"
 
-VERSION = "0.6"
+VERSION = "0.7"
 
 VERSIONS_WITH_AI_DESCRIPTIONS = [21]
 
@@ -74,6 +75,13 @@ os.makedirs(METADATA_FOLDER, exist_ok=True)
 
 LOG = os.getenv("LOG", "false") == "true"
 
+def get_java_version() -> str:
+    return subprocess.check_output(
+        f"java -version 2>&1 | head -n 1 | cut -d '\"' -f 2",
+        shell=True).decode("utf-8").strip()
+
+assert get_java_version().startswith(JAVA_VERSION), \
+    f"Java version {JAVA_VERSION} is required to run this script, but found {get_java_version()}"
 
 def log(msg: str):
     if LOG:
