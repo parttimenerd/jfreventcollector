@@ -201,6 +201,12 @@ Environment variables:
 Run `bin/releaser.py download build_parser build_versions build deploy`.
 Only run `bin/releaser.py create_jfr` if you have a new JDK version installed.
 
+## Publishing of the website
+
+The website is built using the [website generator](./website) and is update
+on every push to the `main` branch via GitHub Actions.
+It also update every night via a scheduled GitHub Action.
+
 ## Support, Feedback, Contributing
 
 This project is open to feature requests/suggestions, bug reports etc.
