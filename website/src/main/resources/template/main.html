@@ -215,8 +215,10 @@ $(".popover-on").tooltip({ trigger: 'hover', placement: 'top' });
 new bootstrap.ScrollSpy(document.body, {target: '#toc'});
 });
 
-// Initialize TOC - store reference for refreshing
+// Initialize TOC and anchors
 
+let urlWithoutParameters = window.location.href.split('?')[0];
+anchors.options.base = urlWithoutParameters;
 anchors.add();
 
 function shouldShow(jdks, graalOnly, jdkOnly) {

@@ -984,9 +984,8 @@ class CreateForwardCommand : Runnable {
 
     override fun run() {
         val folderFile = folder.toFile()
-        if (!folderFile.exists() || !folderFile.isDirectory) {
-            System.err.println("Error: Folder does not exist or is not a directory: $folder")
-            return
+        if (!folderFile.exists()) {
+            folderFile.mkdir()
         }
 
         // Normalize the base URL (remove trailing slash if present)
@@ -1002,11 +1001,16 @@ class CreateForwardCommand : Runnable {
     }
 
     private fun createForwardPage(name: String) {
+        println("Creating forward page for $name to $newBaseUrl/$name")
         val forwardUrl = newBaseUrl.trimEnd('/') + "/" + name
-        val forwardHtml = Templating().template(
-            "forward.html",
-            Main.ForwardPageScope(forwardUrl)
-        )
+        val forwardHtml = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta http-equiv="refresh" content="0; URL='$forwardUrl'" />
+            </head>
+            </html>
+        """.trimIndent()
         folder.resolve(name).toFile().writeText(forwardHtml)
     }
 }

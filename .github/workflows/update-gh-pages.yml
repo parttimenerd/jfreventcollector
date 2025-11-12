@@ -47,7 +47,7 @@ jobs:
           ls -la target/
           echo "Generating site..."
           jar tf target/jfrevents-site-generator.jar | grep '\.class$' | grep "bechberger"
-          java -jar target/jfrevents-site-generator.jar generate site
+          java -jar target/jfrevents-site-generator.jar generate site --hide-missing-descriptions
           ls -la site/
 
       - name: Setup Pages
