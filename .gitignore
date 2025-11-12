@@ -36,6 +36,9 @@ build/
 
 ### Mac OS ###
 .DS_Store
+._.DS_Store
+._.idea
+._resources
 
 .openai.key
 *.jar
@@ -43,3 +46,8 @@ bin/.idea
 harness-*
 spooned
 src/main/resources
+
+.idea/
+bin/.idea/
+site/
+target/

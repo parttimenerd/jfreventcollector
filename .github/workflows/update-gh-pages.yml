@@ -32,42 +32,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Java 21
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'sapmachine'
 
-      - name: Setup Maven Cache for root project
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'sapmachine'
-          cache: maven
-          cache-dependency-path: pom.xml
-
-      - name: Build root project
-        run: |
-          mvn clean install -DskipTests
-
-      - name: Setup Maven Cache for website
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'sapmachine'
-          cache: maven
-          cache-dependency-path: website/pom.xml
-
-      - name: Build website generator
+      - name: Build website generator and generate site
         run: |
           cd website
+          echo "Building site generator..."
           mvn dependency:resolve -U
-          mvn clean package assembly:single
+          mvn clean package
           ls -la target/
-
-      - name: Generate site
-        run: |
-          cd website
+          echo "Generating site..."
+          jar tf target/jfrevents-site-generator.jar | grep '\.class$' | grep "bechberger"
           java -jar target/jfrevents-site-generator.jar generate site
           ls -la site/
 
