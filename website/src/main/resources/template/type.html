@@ -1,0 +1,35 @@
+<p>
+  {{#unsigned}}
+  <span class="badge bg-info">unsigned</span>
+  {{/unsigned}}
+  {{#since}}
+  <span class="badge bg-warning">JDK {{.}}+</span>
+  {{/since}}
+  {{#until}}
+  <span class="badge bg-danger">till JDK {{.}}</span>
+  {{/until}}
+  {{{jdkBadges}}}
+</p>
+{{{appearsIn}}}
+
+<p class="event-description b-1 l-1 r-1">
+  {{#label}}<span class="field-label">{{.}}</span>{{/label}} {{#additionalDescription}}<span class="field-description">{{{.}}}</span>{{/additionalDescription}} {{#descriptionMissing}}
+  <span class="description-missing">No description available.
+                    Write your own and contribute it to
+                    <a href="https://github.com/SAP/jfrevents/blob/main/additional.xml">jfreventcollector</a>.
+                    or directly to the <a href="https://github.com/openjdk/jdk">OpenJDK</a>.
+                </span>
+  {{/descriptionMissing}}
+</p>
+{{#fields}}
+<p>{{{.}}}</p>
+{{/fields}}
+{{#annotation}}
+<p class="annotation"><span class="fw-light">Annotation: </span>
+  {{.}}
+</p>
+{{/annotation}}
+{{#typesTable}}
+{{{.}}}
+{{/typesTable}}
+{{{examples}}}

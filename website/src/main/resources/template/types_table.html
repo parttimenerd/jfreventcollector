@@ -1,0 +1,47 @@
+<table class="table table-hover types-table">
+    <thead>
+        <tr>
+            <th scope="col" style="width: 2em;"></th>
+            <th scope="col" style="width: 2em;"></th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#parameterType}}
+        <tr>
+            <th scope="row">Parameter Type</th>
+            <td>
+                {{.}}
+            </td>
+        </tr>
+        {{/parameterType}}
+        {{#fieldType}}
+        <tr>
+            <th scope="row">Field Type</th>
+            <td>
+                {{.}}
+            </td>
+        </tr>
+        {{/fieldType}}
+        {{#javaType}}
+        <tr>
+            <th scope="row">Java Type</th>
+            <td>
+                {{.}}
+            </td>
+        </tr>
+        {{/javaType}}
+        {{#contentType}}
+        <tr>
+            <th scope="row">Content Type</th>
+            <td>
+                {{#contentTypeLink}}
+                <a href="{{.}}">{{contentType}}</a>
+                {{/contentTypeLink}}
+                {{^contentTypeLink}}
+                {{.}}
+                {{/contentTypeLink}}
+            </td>
+        </tr>
+        {{/contentType}}
+    </tbody>
+</table>

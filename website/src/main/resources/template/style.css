@@ -1,0 +1,506 @@
+.jdk-badge {
+    text-decoration: none;
+}
+
+.jdk-label {
+    display: none;
+}
+.relevant .jdk-label {
+    display: inline;
+}
+.relevant.active {
+    display: block;
+    color: rgba(255,255,255,.75);
+}
+
+@media (max-width: 1024px) {
+    .container {
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 95%;
+    }
+}
+
+.nav-scroller {
+    position: relative;
+    z-index: 2;
+    height: 2.75rem;
+    overflow-y: hidden;
+}
+
+.nav-scroller .nav {
+    display: flex;
+    flex-wrap: nowrap;
+    padding-bottom: 1rem;
+    margin-top: -1px;
+    overflow-x: auto;
+    text-align: center;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+}
+
+.description-missing {
+    font-size: small;
+    color: lightgray;
+}
+
+.description-missing a {
+    color: lightblue;
+}
+
+.source {
+    font-size: small;
+    color: gray;
+}
+
+.event-config, .types-table {
+    table-layout: fixed;
+}
+
+.inner, .sticky-top {
+    padding-top: 80px;
+}
+
+.inner {
+    padding-left: 1cm;
+}
+
+.navbar-nav > li {
+    margin-top: -0.2em;
+    margin-bottom: -0.2em;
+}
+#toc > ul > li > .nav-link:not(.active) {
+    height: 2.2em;
+}
+#toc .nav-link {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.field-label {
+    font-weight: 400;
+}
+
+.field-description {
+    font-weight: 300;
+    font-size: 0.9em;
+}
+
+.misses {
+    font-size: 0.9em;
+    margin-top: -1em;
+}
+.inner {
+    z-index: 100;
+    background-color: #ffffffad;
+}
+.toc {
+    z-index: 99;
+}
+
+.sapmachine-logo {
+    width: 2em;
+    height: 2em;
+    margin-top: -0.7em;
+    margin-bottom: -0.5em;
+}
+@media (min-width: 1000px) {
+    nav.navbar {
+        height: auto;
+    }
+    .event-selector, .variant-selector {
+        margin-right: 1.5em;
+    }
+}
+
+@media (max-width: 999px) {
+    .sapmachine-logo {
+        margin-bottom: 0px;
+        margin-top: 10px;
+    }
+    .jdk-label {
+        display: inline;
+    }
+    .event-selector, #aiButton {
+        margin-bottom: 1em;
+    }
+}
+
+@media (max-width: 1420px) {
+     .event-selector, .variant-selector {
+        display: none;
+    }
+}
+
+h2 {
+    padding-top: 100px;
+    margin-top: -40px;
+}
+
+.section h1 {
+    padding-top: 100px;
+    margin-top: -40px;
+    margin-bottom: -30px;
+}
+
+.type-link, .type-link:visited {
+    color: darkblue;
+    text-decoration: none;
+}
+.type-link:hover {
+    color: blue;
+    text-decoration: underline;
+}
+
+.type-link, .type-link:visited {
+    color: darkblue;
+    text-decoration: none;
+}
+.type-link:hover {
+    color: blue;
+    text-decoration: underline;
+}
+
+.table-header-row {
+    font-size: 0.9em;
+    font-weight: 700;
+}
+
+.intro-body {
+    padding-top: 60px;
+}
+.intro h1 {
+    margin-top: -140px;
+}
+
+.examples-tab {
+    padding: 0.3cm;
+}
+.examples-tab table tr {
+    table-layout: fixed;
+    font-size: calc(1em - 0.05em * var(--depth))
+}
+.examples-tab table th {
+    width: 200px;
+    padding-left: calc(15px * var(--depth));
+    word-break: break-all;
+}
+.null-value {
+    font-family: monospace;
+    font-style: italic;
+}
+.string-value {
+    font-family: monospace;
+    word-break: break-all;
+}
+.array-value, .object-value {
+    vertical-align: top;
+}
+.array-value {
+}
+.object-value {
+}
+.value-truncated {
+    .font-family: sans-serif;
+}
+summary {
+    padding-bottom: 0.1cm;
+}
+a.hidden-toc-section {
+    font-size: 0px !important;
+}
+a.hidden-subtoc-section {
+    display: none !important;
+}
+.ai-generated-description {
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+.ai-generated-description .badge {
+    opacity: 0.9;
+}
+.ai-generated-description .disclaimer {
+    font-style: italic;
+}
+#aiButton {
+  margin-right: 1.5em;
+}
+.code-context {
+    font-size: 0.9em;
+}
+.code-context .badge {
+    opacity: 0.95;
+}
+.code-context .disclaimer {
+    font-style: italic;
+    font-size: 0.8em;
+}
+.code-context .body {
+    border-style: dashed;
+    border-width: 1px;
+    border-color: lightgray;
+}
+.code-context .path-url {
+    font-style: monospace;
+}
+.code-context pre[data-line] {
+    padding-left: 4em;
+}
+.code-context .code-snippets {
+    margin-bottom: -1.1em;
+}
+#codeContextButton {
+  margin-right: 1.5em;
+}
+.stackFilter {
+    font-size: 0.9em;
+}
+
+/* Search functionality styles */
+.search-container {
+    min-width: 200px;
+    width: 300px;
+}
+
+.search-container .input-group {
+    max-width: 400px;
+}
+
+.search-container input {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.search-container input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.search-container input:focus {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: #0d6efd;
+    color: white;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.search-container .btn-outline-secondary {
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.search-container .btn-outline-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+
+.search-help ul {
+    padding-left: 1.5rem;
+}
+
+.search-help code {
+    background-color: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+}
+
+/* Help modal headers - use dark blue instead of light blue */
+.search-help h4, .search-help h5, .search-help h6 {
+    color: #1e3a8a !important;
+}
+
+/* Help modal card titles and text colors - use dark blue */
+.search-help .card-title.text-primary {
+    color: #1e3a8a !important;
+}
+
+.search-help .text-primary {
+    color: #1e3a8a !important;
+}
+
+/* Help modal info colors - use dark blue */
+.search-help .text-info {
+    color: #1e3a8a !important;
+}
+
+.search-help .border-info {
+    border-color: #1e3a8a !important;
+}
+
+/* Help modal code examples - use dark blue */
+.search-help .text-primary code {
+    color: #1e3a8a !important;
+}
+
+@media (max-width: 999px) {
+    .search-container {
+        min-width: 250px;
+        margin-bottom: 1em;
+    }
+
+    .search-container .input-group {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 767px) {
+    .search-container {
+        min-width: 200px;
+    }
+}
+.search-suggestions {
+    top: 100%;
+    left: 0;
+    z-index: 1050;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.search-suggestion-item {
+    cursor: pointer;
+    padding: 8px 12px;
+    font-size: 14px;
+    border: none;
+    transition: background-color 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.search-suggestion-item:hover,
+.search-suggestion-item.active {
+    background-color: #f8f9fa;
+}
+
+.suggestion-text {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    color: #0d6efd;
+}
+
+.suggestion-description {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+.suggestion-category {
+    font-size: 11px;
+    color: #198754;
+    font-weight: 500;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.suggestion-history {
+    color: #6f42c1;
+}
+
+.suggestion-frequency {
+    font-size: 10px;
+    color: #adb5bd;
+    margin-left: 8px;
+}
+
+/* Search pattern highlighting for suggestions only */
+.search-pattern {
+    color: #0d6efd;
+    font-weight: 500;
+}
+
+.search-pattern-property { color: #003d82; font-weight: 500; }
+
+/* Suggestion syntax highlighting */
+.suggestion-text-highlighted .search-pattern {
+    padding: 1px 3px;
+    border-radius: 3px;
+}
+
+/* Operator suggestions styling */
+.suggestion-operator {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* Grouping suggestions styling */
+.suggestion-grouping {
+    color: #6f42c1;
+    font-weight: 500;
+}
+
+/* Enhanced category styling */
+.suggestion-category.operator-category {
+    color: #dc3545;
+}
+
+.suggestion-category.grouping-category {
+    color: #6f42c1;
+}
+
+.search-patterns {
+    margin-top: 2em;
+}
+
+/* Custom navbar expand behavior for 1000px breakpoint */
+@media (min-width: 1000px) {
+    .navbar-expand-1000 .navbar-nav {
+        flex-direction: row;
+    }
+    .navbar-expand-1000 .navbar-nav .dropdown-menu {
+        position: absolute;
+    }
+    .navbar-expand-1000 .navbar-nav .nav-link {
+        padding-right: 0.5rem;
+        padding-left: 0.5rem;
+    }
+    .navbar-expand-1000 > .container,
+    .navbar-expand-1000 > .container-fluid,
+    .navbar-expand-1000 > .container-sm,
+    .navbar-expand-1000 > .container-md,
+    .navbar-expand-1000 > .container-lg,
+    .navbar-expand-1000 > .container-xl,
+    .navbar-expand-1000 > .container-xxl {
+        flex-wrap: nowrap;
+    }
+    .navbar-expand-1000 .navbar-nav-scroll {
+        overflow: visible;
+    }
+    .navbar-expand-1000 .navbar-collapse {
+        display: flex !important;
+        flex-basis: auto;
+    }
+    .navbar-expand-1000 .navbar-toggler {
+        display: none;
+    }
+    .navbar-expand-1000 .offcanvas-header {
+        display: none;
+    }
+    .navbar-expand-1000 .offcanvas {
+        position: inherit;
+        bottom: 0;
+        z-index: 1000;
+        flex-grow: 1;
+        visibility: visible !important;
+        background-color: transparent;
+        border: 0;
+        transform: none;
+        transition: none;
+    }
+    .navbar-expand-1000 .offcanvas-top,
+    .navbar-expand-1000 .offcanvas-bottom {
+        height: auto;
+        border: 0;
+    }
+    .navbar-expand-1000 .offcanvas-body {
+        display: flex;
+        flex-grow: 0;
+        padding: 0;
+        overflow-y: visible;
+    }
+}
+@media (min-width: 1000px) and (max-width: 1050px) {
+    .relevant .jdk-label {
+        display: none;
+    }
+}

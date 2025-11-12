@@ -1,0 +1,30 @@
+{{#fields.size}}
+<table class="table table-hover field-table">
+    <thead>
+        <tr class="table-header-row">
+            <th scope="col" style="width: 13em;">Field</th>
+            <th scope="col" style="width: 13em;" class="field-type-header">Type</th>
+            <th scope="col" class="field-description-header">Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#fields}}
+        <tr>
+            <th scope="row">{{name}} {{#array}} <span class="badge bg-info">array</span>{{/array}}</th>
+            <td>
+                {{#type.link}}<a href="{{{type.link}}}" class="popover-on type-link" data-content="{{type.label}}">{{type.name}}</a>{{/type.link}}{{^type.link}}{{type.name}}{{/type.link}}{{#contentType}}: {{#contentType.link}}<a href="{{{contentType.link}}}" class="popover-on type-link" data-content="{{contentType.label}}">{{contentType.name}}</a>{{/contentType.link}}
+                {{/contentType}}
+                {{#struct}} <span class="badge bg-info">struct</span>{{/struct}}
+                {{{jdkBadges}}}
+            </td>
+            <td>
+                {{#label}}<span class="field-label">{{.}}</span>{{/label}} {{#description}}<span class="field-description">{{{.}}}</span>{{/description}} {{#additionalDescription}}<span class="field-description">{{{.}}}</span>{{/additionalDescription}} {{#descriptionMissing}}
+                <span class="description-missing">Consider contributing a description to <a href="https://github.com/SAP/jfrevents/blob/main/additional.xml">jfreventcollector</a>.
+                </span>
+                {{/descriptionMissing}}
+            </td>
+        </tr>
+        {{/fields}}
+    </tbody>
+</table>
+{{/fields.size}}

@@ -9,7 +9,7 @@
     <name>JFR Event Collector</name>
 
     <version>${project.vversion}${project.suffix}</version>
-    <url>https://github.com/parttimenerd/jfreventcollector</url>
+    <url>https://github.com/sap/jfrevents</url>
     <licenses>
         <license>
             <name>GPL v2.0</name>
@@ -20,13 +20,13 @@
         <developer>
             <id>parttimenerd</id>
             <name>Johannes Bechberger</name>
-            <email>johannes@bechberger.me</email>
+            <email>johannes.bechberger@sap.com</email>
         </developer>
     </developers>
     <scm>
-        <connection>scm:git:https://github.com/parttimenerd/jfreventcollector.git</connection>
-        <developerConnection>scm:git:https://github.com/parttimenerd/jfreventcollector.git</developerConnection>
-        <url>https://github.com/parttimenerd/jfreventcollector.git</url>
+        <connection>scm:git:https://github.com/sap/jfrevents.git</connection>
+        <developerConnection>scm:git:https://github.com/sap/jfrevents</developerConnection>
+        <url>https://github.com/sap/jfrevents.git</url>
     </scm>
     <inceptionYear>2022</inceptionYear>
     <description>Contains tools to extract information on JFR events from the OpenJDK source code and JFR files.</description>

@@ -1,0 +1,14 @@
+{{#show}}
+<p class="appears">
+    <span class="fw-light">Appearing in:</span>
+    {{#appearsIn}}
+    {{value}}{{^last}}, {{/last}}
+    {{/appearsIn}}
+</p>
+<p class="misses">
+    <span class="fw-light">Missing in:</span>
+    {{#missesIn}}
+    {{value}}{{^last}}, {{/last}}
+    {{/missesIn}}
+</p>
+{{/show}}

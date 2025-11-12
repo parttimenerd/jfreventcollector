@@ -1,0 +1,3902 @@
+<!doctype html>
+<html lang="en" class="h-100">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Collection of JFR events for JDK {{info.version}}">
+    <meta name="author" content="Johannes Bechberger and jfreventcollector contributors">
+    <meta name="generator" content="jfrevents-site-generator">
+    <title>JFR Event Collection for JDK {{info.version}}</title>
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="img/sapmachine.svg"/>
+    <meta name="theme-color" content="#712cf9">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/bootstrap-toc.css"/>
+    <link rel="stylesheet" href="css/prism.min.css">
+    <link rel="stylesheet" href="css/prism-line-numbers.min.css">
+    <link rel="stylesheet" href="css/prism-line-highlight.min.css">
+    <style>
+        /* Warning suggestion styles */
+        .suggestion-warning {
+            color: #856404 !important;
+        }
+        .list-group-item-warning {
+            background-color: #fff3cd !important;
+            border-color: #ffeaa7 !important;
+        }
+        .list-group-item-warning:hover {
+            background-color: #ffeaa7 !important;
+        }
+        .text-warning {
+            color: #856404 !important;
+        }
+        
+        /* Consistent suggestion height fix */
+        #searchSuggestions .list-group-item {
+            padding: 0.75rem 1rem !important;
+            min-height: 2.5rem !important;
+            line-height: 1.2 !important;
+            box-sizing: border-box !important;
+        }
+        
+        #searchSuggestions .list-group-item.active {
+            padding: 0.75rem 1rem !important;
+            min-height: 2.5rem !important;
+            line-height: 1.2 !important;
+            box-sizing: border-box !important;
+        }
+        
+        #searchSuggestions .list-group-item:hover {
+            padding: 0.75rem 1rem !important;
+            min-height: 2.5rem !important;
+            line-height: 1.2 !important;
+        }
+    </style>
+</head>
+<body class="d-flex flex-column h-100">
+
+<header>
+    <nav class="navbar navbar-expand-1000 navbar-dark fixed-top bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">JFR Events {{this}}</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    {{#info}}
+                        {{#versions}}
+                        {{#isRelevant}}
+                        <li class="nav-item">
+                            <a class="nav-link {{#isCurrent}}active{{/isCurrent}} {{#isLTS}}relevant{{/isLTS}}" aria-current="page" href="{{fileName}}"><span class="jdk-label">JDK</span> {{version}}</a>
+                        </li>
+                        {{/isRelevant}}
+                        {{/versions}}
+                        <!-- drop down of all irrelevant versions-->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Other
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                {{#versions}}
+                                {{^isRelevant}}
+                                <li><a class="dropdown-item" href="{{fileName}}"><span class="jdk-label">JDK</span> {{version}}</a></li>
+                                {{/isRelevant}}
+                                {{/versions}}
+                            </ul>
+                        </li>
+                    {{/info}}
+                </ul>
+                <!-- Search field -->
+                <div class="search-container me-3 position-relative">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="eventSearch" placeholder="Search events..." aria-label="Search events" autocomplete="off">
+                        <button class="btn btn-outline-secondary" type="button" id="searchInfoBtn" title="Search syntax help">
+                            <i class="bi bi-info-circle"></i>?
+                        </button>
+                    </div>
+                    <!-- Search suggestions panel -->
+                    <div id="searchSuggestions" class="search-suggestions position-absolute w-100 d-none">
+                        <div class="bg-white border rounded shadow-sm">
+                            <div id="suggestionsList" class="list-group list-group-flush">
+                                <!-- Suggestions will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-group event-selector" role="group" title="Select new events">
+                    {{#info}}
+                    <input type="radio" class="btn-check" data-version="8" name="btn-all-events" id="btn-all-events" autocomplete="off" checked onchange="showVersions(8)">
+                    <label class="btn btn-outline-primary" for="btn-all-events" title="All events supported in JDK {{version}}">All</label>
+                    {{#previousOneAfterLTS}}
+                    <input type="radio" class="btn-check" data-version="{{.}}" name="btn-new-since-{{.}}-events" id="btn-new-since-{{.}}-events" autocomplete="off" onchange="showVersions({{.}})">
+                    <label class="btn btn-outline-primary" for="btn-new-since-{{.}}-events" title="New events introduced since JDK {{.}}, after the last LTS release">since {{.}}</label>
+                    {{/previousOneAfterLTS}}
+                    <input type="radio" class="btn-check" data-version="{{version}}" name="btn-new-in-{{version}}-events" id="btn-new-in-{{version}}-events" autocomplete="off" onchange="showVersions({{version}})">
+                    <label class="btn btn-outline-primary" for="btn-new-in-{{version}}-events" title="New events introduced in JDK {{version}}" >in {{version}}</label>
+                    {{/info}}
+                </div>
+                {{#info.graalVMInfo}}
+                <div class="btn-group variant-selector" role="group" title="Select new events">
+                    <input type="radio" class="btn-check" data-variant="all" name="btn-all-variants" id="btn-all-variants" autocomplete="off" checked onchange="showVariant('all')">
+                    <label class="btn btn-outline-primary" for="btn-all-variants" title="Events supported in OpenJDK or Graal VM">All</label>
+                    <input type="radio" class="btn-check" data-variant="jdk" name="btn-jdk-variants" id="btn-jdk-variants" autocomplete="off" onchange="showVariant('jdk')">
+                    <label class="btn btn-outline-primary" for="btn-jdk-variants" title="Events supported in OpenJDK">JDK</label>
+                    <input type="radio" class="btn-check" data-variant="graal" name="btn-graal-variants" id="btn-graal-variants" autocomplete="off" onchange="showVariant('graal')">
+                    <label class="btn btn-outline-primary" for="btn-graal-variants" title="Events supported in Graal VM">Graal</label>
+                </div>
+                {{/info.graalVMInfo}}
+                {{#info.hasAIGeneratedDescriptions}}
+                <span class="btn btn-outline-primary" title="Open all AI generated descriptions" onclick="toggleAIButton()" id="aiButton">Experimental</span>
+                {{/info.hasAIGeneratedDescriptions}}
+                {{#info.hasCodeContexts}}
+                <span class="btn btn-outline-primary" title="Open all code contexts" onclick="toggleCodeContextButton()" id="codeContextButton">Code Contexts</span>
+                {{/info.hasCodeContexts}}
+                <span class="navbar-text logo-span">
+                    <a class="nav-link" aria-current="page" href="https://sapmachine.io"><img src="img/sapmachine.svg" class="sapmachine-logo"/></a>
+                </span>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<!-- Begin page content -->
+<main class="flex-shrink-0">
+    <div class="container" style="margin-top: 100px">
+        <div class="row">
+            <div class="col-sm-3 mb-3 toc">
+                <nav id="toc" data-toggle="toc" class="sticky-top"></nav>
+            </div>
+            <div class="col-sm-9 inner">
+                {{#inner}}
+                    {{{.}}}
+                {{/inner}}
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer mt-auto py-3 bg-light">
+    <div class="container text-center">
+        <span class="text-muted">Generated by <a
+                href="https://github.com/SAP/jfrevents/website">jfrevents-site-generator</a> using data from <a
+                href="https://github.com/SAP/jfrevents">jfreventcollector</a>.
+            A service provided by the <a href="https://sapmachine.io">SapMachine</a> team at <a href="https://sap.com">SAP</a>. </span>
+    </div>
+</footer>
+<script src="bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap-toc.js"></script>
+<script src="js/anchor.min.js"></script>
+<script src="js/prism.min.js"></script>
+<script src="js/prism-c.min.js"></script>
+<script src="js/prism-cpp.min.js"></script>
+<script src="js/prism-java.min.js"></script>
+<script src="js/prism-line-highlight.min.js"></script>
+<script src="js/prism-line-numbers.min.js"></script>
+<script>
+$(function () {
+$('.appears span').popover({
+    trigger: 'hover',
+    placement: 'left',
+    content: 'Appears in the renaissance benchmark running the following GCs',
+});
+$('.misses span').popover({
+    trigger: 'hover',
+    placement: 'left',
+    content: 'Misses in the renaissance benchmark running the following GCs',
+});
+$('.field-description-header').popover({
+    trigger: 'hover',
+    placement: 'top',
+    content: 'Label, description and crowd sourced description from the jfreventcollector project.',
+});
+$('.field-type-header').popover({
+    trigger: 'hover',
+    placement: 'top',
+    content: 'Field type : Content type (if present)',
+});
+$('.period-badge').popover({
+    trigger: 'hover',
+    placement: 'top',
+    content: 'Event emitting interval; an interval or chunk related',
+});
+$('.graal-badge').popover({
+    trigger: 'hover',
+    placement: 'top',
+    content: 'Supported in Graal VM',
+});
+$('.graal-only-badge').popover({
+    trigger: 'hover',
+    placement: 'top',
+    content: 'Supported only in Graal VM',
+});
+$(".popover-on").tooltip({ trigger: 'hover', placement: 'top' });
+new bootstrap.ScrollSpy(document.body, {target: '#toc'});
+});
+
+// Initialize TOC - store reference for refreshing
+
+anchors.add();
+
+function shouldShow(jdks, graalOnly, jdkOnly) {
+    // assume that window.version !== -1
+    let parsedJDKs = jdks.map(function (el) {
+        return parseInt(el);
+    });
+    for (let i = 0; i < parsedJDKs.length; i++) {
+        if (version > parsedJDKs[i]) {
+            return false;
+        }
+    }
+    if (variant === "graal-only" && !graalOnly) {
+        return false;
+    }
+    if (variant === "jdk-only" && !jdkOnly) {
+        return false;
+    }
+    if (variant === "all" && (graalOnly || jdkOnly)) {
+        return false;
+    }
+    if (variant === "graal" && jdkOnly) {
+        return false;
+    }
+    if (variant === "jdk" && graalOnly) {
+        return false;
+    }
+    return true;
+}
+
+function getURLState(name, defaultValue) {
+    let url = new URL(window.location.href);
+    let value = url.searchParams.get(name);
+    if (value === null) {
+        return defaultValue;
+    }
+    return value;
+}
+
+function pushURLState(name, value) {
+    let url = new URL(window.location.href);
+    url.searchParams.set(name, value);
+    window.history.pushState({}, "", url);
+}
+
+window.version = getURLState("version", -1);
+window.variant = getURLState("variant", ""); // "all", "graal", "jdk"//, "graal-only", or "jdk-only"
+
+$(function() {
+    if (window.version !== -1 || window.variant !== "") {
+        showEvents();
+    }
+});
+
+function showVersions(version) {
+    window.version = version;
+    showEvents();
+    pushURLState("version", version);
+}
+
+function showVariant(variant) {
+    window.variant = variant;
+    showEvents();
+    pushURLState("variant", variant);
+}
+
+function showEvents() {
+    if (window.version === -1 && window.variant === "") {
+        return;
+    }
+    console.log(version);
+    let eventSelectors = document.querySelectorAll(".event-selector input");
+    eventSelectors.forEach(function (el) {
+        el.checked = el.dataset.version === "" + version;
+    });
+    let variantSelectors = document.querySelectorAll(".variant-selector input");
+    variantSelectors.forEach(function (el) {
+        el.checked = el.dataset.variant === variant;
+    });
+    // find all elements of the class event-part and display them only
+    // if the version is part of the data-jdks attribute
+    let eventParts = document.querySelectorAll(".hideable-part");
+    eventParts.forEach(function (el) {
+        let jdks = el.dataset.jdks.split(",");
+        let graalOnly = el.dataset.graalOnly === "true";
+        let jdkOnly = el.dataset.jdkOnly === "true";
+        var display;
+        if (shouldShow(jdks, graalOnly, jdkOnly)) {
+            display = "block";
+        } else {
+            display = "none";
+        }
+        el.style.display = display;
+        if (el.id !== "") {
+            let element = document.querySelector(".nav-link[href=\"#" + el.id + "\"]");
+            element.style.display = display;
+        }
+    });
+    let headers = document.querySelectorAll("h1.section-header");
+    headers.forEach(function (el) {
+        let jdks = el.dataset.jdks.split(",");
+        let graalOnly = el.dataset.graalOnly === "true";
+        let jdkOnly = el.dataset.jdkOnly === "true";
+        let element = document.querySelector(".nav-link[href=\"#" + el.id + "\"]");
+        if (shouldShow(jdks, graalOnly, jdkOnly)) {
+            //element.style.display = "block";
+            element.classList.remove("hidden-toc-section");
+        } else {
+            element.classList.add("hidden-toc-section");
+        }
+    });
+}
+
+function toggleAIButton() {
+    let aiDescriptions = document.querySelectorAll(".ai-generated-description");
+    let button = document.querySelector("#aiButton");
+    let open = button.classList.contains("active");
+    if (open) {
+        button.classList.remove("active");
+    } else {
+        button.classList.add("active");
+    }
+    aiDescriptions.forEach(function (el) {
+        el.open = !open;
+    });
+}
+
+function toggleCodeContextButton() {
+    let codeContexts = document.querySelectorAll(".code-context");
+    let button = document.querySelector("#codeContextButton");
+    let open = button.classList.contains("active");
+    if (open) {
+        button.classList.remove("active");
+    } else {
+        button.classList.add("active");
+    }
+    codeContexts.forEach(function (el) {
+        el.open = !open;
+    });
+}
+
+// Advanced Event Search Functionality
+window.searchState = {
+    query: '',
+    filters: {},
+    searchTimeout: null
+};
+
+// Global variable for suggestion selection
+let selectedSuggestionIndex = -1;
+
+// ========================================
+// SEARCH PATTERN DEFINITIONS
+// Each pattern contains all its functionality in one place:
+// - regex: pattern matching
+// - description: help text
+// - examples: usage examples
+// - parse: how to parse matches
+// - match: how to test against elements
+// ========================================
+
+// Helper function to handle positive and negative pattern matching
+function evaluatePatterns(patterns, testFunction) {
+    let positiveMatch = true;
+    let negativeMatch = true;
+
+    const positivePatterns = patterns.filter(p => !p.negate);
+    const negativePatterns = patterns.filter(p => p.negate);
+
+    // For positive patterns, ALL must match (AND operation)
+    if (positivePatterns.length > 0) {
+        positiveMatch = positivePatterns.every(testFunction);
+    }
+
+    // For negative patterns, NONE should match (NOT operation)
+    if (negativePatterns.length > 0) {
+        negativeMatch = !negativePatterns.some(testFunction);
+    }
+
+    return positiveMatch && negativeMatch;
+}
+
+const searchPatterns = {
+    name: {
+        regex: /(!)?name(-sensitive)?:([^\s]+)/g,
+        description: "Match event name (supports * and ? wildcards)",
+        examples: ["name:*GC*", "name:Thread?roup", "name:JavaMonitorEnter", "name-sensitive:GCEvent", "!name:*Test*"],
+        usage: "Use wildcards to match event names. * matches any characters, ? matches single character. Add -sensitive for case-sensitive matching. Prefix with ! to exclude matches.",
+        buildContextData: () => {
+            const nameSet = new Set();
+            document.querySelectorAll('[data-name]').forEach(el => {
+                const name = el.dataset.name;
+                if (name) {
+                    nameSet.add(name);
+                }
+            });
+            return Array.from(nameSet).sort();
+        },
+
+        getSuggestions: (pattern, valueQuery, replaceCurrentTerm, input, cursorPos) => {
+            const eventNames = searchPatterns.name.buildContextData();
+            return eventNames
+                .filter(name => name.toLowerCase().includes(valueQuery.toLowerCase()))
+                .slice(0, 20)
+                .map(name => ({
+                    type: 'completion',
+                    text: replaceCurrentTerm(input, cursorPos, `${pattern}:${name}`),
+                    description: `Event "${name}"`,
+                    category: 'Event Name'
+                }));
+        },
+
+        parse: (matches) => matches.map(match => ({
+            pattern: match.value,
+            caseSensitive: match.sensitive,
+            negate: match.negate
+        })),
+
+        match: (patterns, eventElement) => {
+            const eventName = eventElement.dataset.name;
+            if (!eventName) {
+                return false;
+            }
+
+            const result = evaluatePatterns(patterns, patternObj =>
+                globMatch(patternObj.pattern, eventName, patternObj.caseSensitive)
+            );
+
+            return result;
+        }
+    },
+
+    label: {
+        regex: /(!)?label:([^\s]+)/g,
+        description: "Match event labels/badges (experimental, deprecated, etc.)",
+        examples: ["label:experimental", "label:*enabled*", "label:deprecated", "!label:deprecated"],
+        usage: "Filter events by their status badges. Supports wildcards for partial matching. Prefix with ! to exclude matches.",
+
+        buildContextData: () => {
+            return ['experimental', 'deprecated', 'enabled', 'default'];
+        },
+
+        getSuggestions: (pattern, valueQuery, replaceCurrentTerm, input, cursorPos) => {
+            const labels = ['experimental', 'deprecated', 'enabled', 'default'];
+            return labels
+                .filter(l => l.toLowerCase().includes(valueQuery))
+                .map(l => ({
+                    type: 'completion',
+                    text: replaceCurrentTerm(input, cursorPos, `${pattern}:${l}`),
+                    description: `Events with "${l}" label`,
+                    category: 'Label'
+                }));
+        },
+
+        parse: (matches) => matches.map(match => ({
+            pattern: match.value,
+            negate: match.negate
+        })),
+
+        match: (patterns, eventElement) => {
+            const badges = eventElement.querySelectorAll('.badge');
+            const labelTexts = Array.from(badges).map(b => b.textContent.trim());
+
+            const result = evaluatePatterns(patterns, patternObj =>
+                labelTexts.some(label => globMatch(patternObj.pattern, label, false))
+            );
+
+            return result;
+        }
+    },
+
+    jdk: {
+        regex: /(!)?jdk:(\d+)/g,
+        description: "Filter by JDK version",
+        examples: ["jdk:17", "jdk:21", "jdk:21+"],
+        usage: "Show only events available in the specified JDK version. Prefix with ! to exclude specific versions.",
+
+        buildContextData: () => {
+            const jdkSet = new Set();
+            document.querySelectorAll('[data-jdks]').forEach(el => {
+                const jdks = el.dataset.jdks.split(',');
+                jdks.forEach(jdk => jdkSet.add(parseInt(jdk.trim())));
+            });
+            return Array.from(jdkSet).sort((a, b) => b - a);
+        },
+
+        getSuggestions: (pattern, valueQuery, replaceCurrentTerm, input, cursorPos) => {
+            const jdkVersions = searchPatterns.jdk.buildContextData();
+            return jdkVersions
+                .filter(v => v.toString().startsWith(valueQuery))
+                .map(v => ({
+                    type: 'completion',
+                    text: replaceCurrentTerm(input, cursorPos, `${pattern}:${v}`),
+                    description: `Events available in JDK ${v}`,
+                    category: 'JDK Version'
+                }));
+        },
+
+        parse: (matches) => matches.map(match => ({
+            value: parseInt(match.value),
+            negate: match.negate
+        })),
+
+        match: (patterns, eventElement) => {
+            const jdksData = eventElement.dataset.jdks;
+            if (!jdksData) {
+                return false;
+            }
+            const eventJdks = jdksData.split(',').map(v => parseInt(v.trim()));
+
+            const result = evaluatePatterns(patterns, pattern => eventJdks.includes(pattern.value));
+
+            return result;
+        }
+    },
+
+    fields: {
+        regex: /(!)?fields(-sensitive)?:([^\s]+)/g,
+        description: "Events with specific fields (comma-separated)",
+        examples: ["fields:startTime,duration", "fields:stackTrace", "fields:thread", "fields-sensitive:Duration", "!fields:stackTrace"],
+        usage: "Filter events that contain all specified fields. Use comma to separate multiple fields. Add -sensitive for case-sensitive matching. Prefix with ! to exclude events with these fields.",
+
+        buildContextData: () => {
+            const fieldSet = new Set();
+            // Get fields from badges
+            document.querySelectorAll('.event .badge').forEach(badge => {
+                const text = badge.textContent.trim();
+                if (text && !text.includes('config') && !text.includes('experimental') && 
+                    !text.includes('deprecated') && !text.includes('enabled')) {
+                    fieldSet.add(text);
+                }
+            });
+            // Get fields from field tables
+            document.querySelectorAll('.field-table tbody tr td:first-child').forEach(cell => {
+                const fieldName = cell.textContent.trim();
+                if (fieldName) {
+                    fieldSet.add(fieldName);
+                }
+            });
+            return Array.from(fieldSet).sort();
+        },
+
+        getSuggestions: (pattern, valueQuery, replaceCurrentTerm, input, cursorPos) => {
+            const fields = searchPatterns.fields.buildContextData();
+            return fields
+                .filter(f => f.toLowerCase().includes(valueQuery))
+                .slice(0, 10)
+                .map(f => ({
+                    type: 'completion',
+                    text: replaceCurrentTerm(input, cursorPos, `${pattern}:${f}`),
+                    description: `Events with field "${f}"`,
+                    category: 'Field'
+                }));
+        },
+
+        parse: (matches) => matches.flatMap(match =>
+            match.value.split(',').map(f => ({
+                pattern: f.trim(),
+                caseSensitive: match.sensitive,
+                negate: match.negate
+            }))
+        ),
+
+        match: (patterns, eventElement) => {
+            const fieldBadges = eventElement.querySelectorAll('.badge');
+            const availableFields = Array.from(fieldBadges).map(b => b.textContent.trim());
+            
+            // Also check field table if it exists
+            const fieldTable = eventElement.querySelector('.field-table');
+            if (fieldTable) {
+                const fieldTableCells = fieldTable.querySelectorAll('tbody tr td:first-child');
+                fieldTableCells.forEach(cell => {
+                    const fieldName = cell.textContent.trim();
+                    if (fieldName) {
+                        availableFields.push(fieldName);
+                    }
+                });
+            }
+
+            const result = evaluatePatterns(patterns, fieldObj =>
+                availableFields.some(available =>
+                    fieldObj.caseSensitive
+                        ? available.includes(fieldObj.pattern)
+                        : available.toLowerCase().includes(fieldObj.pattern.toLowerCase())
+                )
+            );
+
+            return result;
+        }
+    },
+
+    graalvm: {
+        regex: /(!)?graalvm:(true|false|only|all)/g,
+        description: "Filter by GraalVM support (supports: true, false, only, all)",
+        examples: ["graalvm:true", "graalvm:false", "graalvm:only", "graalvm:all", "!graalvm:only"],
+        usage: "Show events by GraalVM support status. Use 'true' for any GraalVM support, 'only' for GraalVM-exclusive events, 'false' for non-GraalVM events, 'all' for any support level. Prefix with ! to exclude specific status.",
+
+        buildContextData: () => {
+            return ['true', 'false', 'only', 'all'];
+        },
+
+        getSuggestions: (pattern, valueQuery, replaceCurrentTerm, input, cursorPos) => {
+            const values = ['true', 'false', 'only', 'all'];
+            const descriptions = {
+                'true': 'Events with GraalVM support',
+                'false': 'Events without GraalVM support',
+                'only': 'GraalVM-exclusive events',
+                'all': 'All events regardless of GraalVM status'
+            };
+            return values
+                .filter(v => v.startsWith(valueQuery))
+                .map(v => ({
+                    type: 'completion',
+                    text: replaceCurrentTerm(input, cursorPos, `${pattern}:${v}`),
+                    description: descriptions[v],
+                    category: 'GraalVM'
+                }));
+        },
+
+        parse: (matches) => matches.map(match => ({
+            value: match.value,
+            negate: match.negate
+        })),
+
+        match: (patterns, eventElement) => {
+            const graalOnly = eventElement.dataset.graalOnly === 'true';
+            const jdkOnly = eventElement.dataset.jdkOnly === 'true';
+            const hasGraalVM = graalOnly || !jdkOnly; // Has GraalVM support if it's graal-only or not jdk-only
+
+            const result = evaluatePatterns(patterns, pattern => {
+                switch (pattern.value) {
+                    case 'true': return hasGraalVM;
+                    case 'false': return !hasGraalVM;
+                    case 'only': return graalOnly;
+                    case 'all': return true; // matches any event regardless of GraalVM status
+                    default: return false;
+                }
+            });
+
+            return result;
+        }
+    },
+
+    config: {
+        regex: /(!)?config:([^\s]+)/g,
+        description: "Filter by configuration profile (supports wildcards)",
+        examples: ["config:default", "config:*profile*", "config:continuous", "!config:test"],
+        usage: "Filter events by their configuration profiles. Use wildcards for flexible matching. Prefix with ! to exclude matches.",
+
+        buildContextData: () => {
+            const configSet = new Set();
+            document.querySelectorAll('.badge.bg-success[title*="config"]').forEach(badge => {
+                const configName = badge.textContent.trim();
+                if (configName) {
+                    configSet.add(configName);
+                }
+            });
+            return Array.from(configSet).sort();
+        },
+
+        getSuggestions: (pattern, valueQuery, replaceCurrentTerm, input, cursorPos) => {
+            const configs = searchPatterns.config.buildContextData();
+            return configs
+                .filter(c => c.toLowerCase().includes(valueQuery))
+                .map(c => ({
+                    type: 'completion',
+                    text: replaceCurrentTerm(input, cursorPos, `${pattern}:${c}`),
+                    description: `Events with "${c}" configuration`,
+                    category: 'Config'
+                }));
+        },
+
+        parse: (matches) => matches.map(match => ({
+            pattern: match.value,
+            negate: match.negate
+        })),
+
+        match: (patterns, eventElement) => {
+            const configBadges = eventElement.querySelectorAll('.badge.bg-success[title*="config"]');
+            const configNames = Array.from(configBadges).map(b =>
+                b.textContent.trim()
+            );
+
+            const result = evaluatePatterns(patterns, patternObj => {
+                // Check if any config matches the pattern
+                return configNames.some(config =>
+                    globMatch(patternObj.pattern, config, false)
+                );
+            });
+
+            return result;
+        }
+    },
+
+    'config-only': {
+        regex: /(!)?config-only:([^\s]+)/g,
+        description: "Filter by events that only appear in specific configuration profiles",
+        examples: ["config-only:default", "config-only:*profile*", "!config-only:test"],
+        usage: "Filter events that are exclusively available in the specified configuration profiles. Use wildcards for flexible matching. Prefix with ! to exclude matches.",
+
+        buildContextData: () => {
+            const configSet = new Set();
+            document.querySelectorAll('.badge.bg-success[title*="config"]').forEach(badge => {
+                const configName = badge.textContent.trim();
+                if (configName) {
+                    configSet.add(configName);
+                }
+            });
+            return Array.from(configSet).sort();
+        },
+
+        getSuggestions: (pattern, valueQuery, replaceCurrentTerm, input, cursorPos) => {
+            const configs = searchPatterns['config-only'].buildContextData();
+            return configs
+                .filter(c => c.toLowerCase().includes(valueQuery))
+                .map(c => ({
+                    type: 'completion',
+                    text: replaceCurrentTerm(input, cursorPos, `${pattern}:${c}`),
+                    description: `Events only in "${c}" configuration`,
+                    category: 'Config Only'
+                }));
+        },
+
+        parse: (matches) => matches.map(match => ({
+            pattern: match.value,
+            negate: match.negate
+        })),
+
+        match: (patterns, eventElement) => {
+            const configBadges = eventElement.querySelectorAll('.badge.bg-success[title*="config"]');
+            const configNames = Array.from(configBadges).map(b =>
+                b.textContent.trim()
+            );
+
+            // For config-only, we need to check if the event appears ONLY in the specified config
+            const result = evaluatePatterns(patterns, patternObj => {
+                const matchingConfigs = configNames.filter(config =>
+                    globMatch(patternObj.pattern, config, false)
+                );
+                // Event is config-only if it has exactly one config and it matches the pattern
+                return configNames.length === 1 && matchingConfigs.length === 1;
+            });
+
+            return result;
+        }
+    },
+
+    category: {
+        regex: /(!)?category(-sensitive)?:([^\s]+)/g,
+        description: "Filter by event category/section (supports wildcards)",
+        examples: ["category:Runtime", "category:*Memory*", "category:Threading", "category-sensitive:Runtime", "!category:Test"],
+        usage: "Filter events by their category section. Use wildcards to match multiple categories. Add -sensitive for case-sensitive matching. Prefix with ! to exclude matches.",
+
+        buildContextData: () => {
+            const eventElements = document.querySelectorAll('.event-entry');
+            const categories = new Set();
+            eventElements.forEach(element => {
+                const categoryName = element.dataset.section;
+                if (categoryName) {
+                    categories.add(categoryName);
+                }
+            });
+            return Array.from(categories).sort();
+        },
+
+        getSuggestions: (pattern, valueQuery, replaceCurrentTerm, input, cursorPos) => {
+            const categories = searchPatterns.category.buildContextData();
+            return categories
+                .filter(c => c.toLowerCase().includes(valueQuery))
+                .slice(0, 20)
+                .map(c => ({
+                    type: 'completion',
+                    text: replaceCurrentTerm(input, cursorPos, `${pattern}:${c}`),
+                    description: `Events in category "${c}"`,
+                    category: 'Category'
+                }));
+        },
+
+        parse: (matches) => matches.map(match => ({
+            pattern: match.value,
+            caseSensitive: match.sensitive,
+            negate: match.negate
+        })),
+
+        match: (patterns, eventElement, fileContentMap) => {
+            const categoryName = eventElement.dataset.section;
+            if (!categoryName) {
+                return false;
+            }
+
+            const result = evaluatePatterns(patterns, patternObj =>
+                globMatch(patternObj.pattern, categoryName, patternObj.caseSensitive)
+            );
+
+            return result;
+        }
+    },
+
+    file: {
+        regex: /(!)?file(-sensitive)?:([^\s]+)/g,
+        description: "Filter by code context file paths (supports wildcards)",
+        examples: ["file:*.java", "file:*GC*", "file-sensitive:Thread", "!file:*test*"],
+        usage: "Filter events based on their code context file paths. Use wildcards to match file name patterns. Add -sensitive for case-sensitive matching. Prefix with ! to exclude matches.",
+        fileMatcher: true, // Flag to indicate this pattern requires file content
+
+        buildContextData: () => {
+            const fileSet = new Set();
+            document.querySelectorAll('.path-url').forEach(pathElement => {
+                const path = pathElement.textContent.trim();
+                if (path) {
+                    // Extract just the filename from the path
+                    const fileName = path.split('/').pop();
+                    if (fileName) {
+                        fileSet.add(fileName);
+                    }
+                    // Also add the full path
+                    fileSet.add(path);
+                }
+            });
+            return Array.from(fileSet).sort();
+        },
+
+        getSuggestions: (pattern, valueQuery, replaceCurrentTerm, input, cursorPos) => {
+            const files = searchPatterns.file.buildContextData();
+            
+            // Helper function to truncate long file paths
+            const truncateFilePath = (path, maxLength = 30) => {
+                if (path.length <= maxLength) return path;
+                
+                const start = Math.floor((maxLength - 3) / 2);
+                const end = path.length - (maxLength - 3 - start);
+                return path.substring(0, start) + '...' + path.substring(end);
+            };
+            
+            return files
+                .filter(f => f.toLowerCase().includes(valueQuery))
+                .slice(0, 20)
+                .map(f => ({
+                    type: 'completion',
+                    text: replaceCurrentTerm(input, cursorPos, `${pattern}:${f}`),
+                    description: `Files matching "${truncateFilePath(f)}"`,
+                    category: 'File'
+                }));
+        },
+
+        parse: (matches) => matches.map(match => ({
+            pattern: match.value,
+            caseSensitive: match.sensitive,
+            negate: match.negate
+        })),
+
+        match: (patterns, eventElement, fileContentMap) => {
+            // Extract code snippets from the event's code context section
+            const codeContextDetails = eventElement.querySelector('.code-context');
+            if (!codeContextDetails) {
+                return patterns.every(p => p.negate); // If all patterns are negated, return true when no code context
+            }
+
+            // Get file path elements
+            const pathElements = codeContextDetails.querySelectorAll('.path-url');
+
+            if (pathElements.length === 0) {
+                return patterns.every(p => p.negate); // If all patterns are negated, return true when no file paths
+            }
+
+            const result = evaluatePatterns(patterns, patternObj => {
+                // Check file paths
+                for (const pathElement of pathElements) {
+                    const path = pathElement.textContent || '';
+                    if (globMatch(patternObj.pattern, path, patternObj.caseSensitive)) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+            return result;
+        }
+    },
+
+    snippet: {
+        regex: /(!)?snippet(-sensitive)?:([^\s]+)/g,
+        description: "Filter by code snippet content (supports wildcards)",
+        examples: ["snippet:*allocation*", "snippet:GC", "snippet-sensitive:Thread", "!snippet:*test*"],
+        usage: "Filter events based on their code snippet content. Use wildcards to match content patterns. Add -sensitive for case-sensitive matching. Prefix with ! to exclude matches.",
+        fileMatcher: true, // Flag to indicate this pattern requires file content
+
+        buildContextData: () => {
+            // Code snippets are dynamic content
+            return [];
+        },
+
+        getSuggestions: (pattern, valueQuery, replaceCurrentTerm, input, cursorPos) => {
+            // Snippet pattern doesn't provide suggestions - content is too dynamic
+            return [];
+        },
+
+        parse: (matches) => matches.map(match => ({
+            pattern: match.value,
+            caseSensitive: match.sensitive,
+            negate: match.negate
+        })),
+
+        match: (patterns, eventElement, fileContentMap) => {
+            // Extract code snippets from the event's code context section
+            const codeContextDetails = eventElement.querySelector('.code-context');
+            if (!codeContextDetails) {
+                return patterns.every(p => p.negate); // If all patterns are negated, return true when no code context
+            }
+
+            // Get all code snippets within the code context
+            const codeSnippets = codeContextDetails.querySelectorAll('code');
+
+            if (codeSnippets.length === 0) {
+                return patterns.every(p => p.negate); // If all patterns are negated, return true when no snippets
+            }
+
+            const result = evaluatePatterns(patterns, patternObj => {
+                // Check code snippet content
+                for (const codeElement of codeSnippets) {
+                    const content = codeElement.textContent || '';
+                    if (globMatch(patternObj.pattern, content, patternObj.caseSensitive)) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+            return result;
+        }
+    },
+
+    has: {
+        regex: /(!)?has:(examples|code|config|description)/g,
+        description: "Filter by what features an event has (examples, code, config, description)",
+        examples: ["has:examples", "has:code", "has:config", "has:description", "!has:examples"],
+        usage: "Filter events based on what features they have. Use 'examples' for events with example usage, 'code' for events with code context, 'config' for events with configuration, 'description' for events with detailed descriptions. Prefix with ! to exclude matches.",
+
+        buildContextData: () => {
+            return ['examples', 'code', 'config', 'description'];
+        },
+
+        getSuggestions: (pattern, valueQuery, replaceCurrentTerm, input, cursorPos) => {
+            const features = ['examples', 'code', 'config', 'description'];
+            const descriptions = {
+                'examples': 'Events with example usage',
+                'code': 'Events with code context',
+                'config': 'Events with configuration',
+                'description': 'Events with detailed descriptions'
+            };
+            return features
+                .filter(f => f.startsWith(valueQuery))
+                .map(f => ({
+                    type: 'completion',
+                    text: replaceCurrentTerm(input, cursorPos, `${pattern}:${f}`),
+                    description: descriptions[f],
+                    category: 'Features'
+                }));
+        },
+
+        parse: (matches) => matches.map(match => ({
+            feature: match.value,
+            negate: match.negate
+        })),
+
+        match: (patterns, eventElement) => {
+            const result = evaluatePatterns(patterns, patternObj => {
+                switch (patternObj.feature) {
+                    case 'examples':
+                        // Check for examples sections or example-related content
+                        return eventElement.querySelector('.examples') !== null ||
+                               eventElement.querySelector('[class*="example"]') !== null ||
+                               eventElement.textContent.toLowerCase().includes('example');
+                    case 'code':
+                        // Check for code context or code snippets
+                        return eventElement.querySelector('.code-context') !== null ||
+                               eventElement.querySelector('code') !== null ||
+                               eventElement.querySelector('pre') !== null;
+                    case 'config':
+                        // Check for configuration badges or config-related content
+                        return eventElement.querySelector('.badge.bg-success[title*="config"]') !== null ||
+                               eventElement.querySelector('[class*="config"]') !== null;
+                    case 'description':
+                        // Check for detailed descriptions (more than just basic info)
+                        const descriptionElement = eventElement.querySelector('.description, .event-description, [class*="description"]');
+                        if (descriptionElement) {
+                            const descText = descriptionElement.textContent.trim();
+                            // Consider it detailed if it has more than 50 characters
+                            return descText.length > 50;
+                        }
+                        // Also check data-description attribute
+                        const dataDesc = eventElement.dataset.description;
+                        return dataDesc && dataDesc.trim().length > 50;
+                    default:
+                        return false;
+                }
+            });
+
+            return result;
+        }
+    },
+
+    type: {
+        regex: /(!)?type:(type|event)/g,
+        description: "Filter by content type (type for type definitions, event for event entries)",
+        examples: ["type:event", "type:type", "!type:type"],
+        usage: "Filter by content type. Use 'event' for JFR event entries, 'type' for type definitions and data structures. Prefix with ! to exclude matches.",
+
+        buildContextData: () => {
+            return ['event', 'type'];
+        },
+
+        getSuggestions: (pattern, valueQuery, replaceCurrentTerm, input, cursorPos) => {
+            const types = ['event', 'type'];
+            const descriptions = {
+                'event': 'JFR event entries',
+                'type': 'Type definitions and data structures'
+            };
+            return types
+                .filter(t => t.startsWith(valueQuery))
+                .map(t => ({
+                    type: 'completion',
+                    text: replaceCurrentTerm(input, cursorPos, `${pattern}:${t}`),
+                    description: descriptions[t],
+                    category: 'Content Type'
+                }));
+        },
+
+        parse: (matches) => matches.map(match => ({
+            value: match.value,
+            negate: match.negate
+        })),
+
+        match: (patterns, eventElement) => {
+            // Check if this is a type definition or an event entry
+            const isTypeDefinition = eventElement.classList.contains('type-definition') || 
+                                   eventElement.classList.contains('type-entry') ||
+                                   eventElement.querySelector('.type-info') !== null ||
+                                   eventElement.dataset.type === 'type' ||
+                                   (eventElement.dataset.name && eventElement.dataset.name.includes('Type'));
+            
+            const isEventEntry = eventElement.classList.contains('event') || 
+                               eventElement.classList.contains('event-entry') ||
+                               eventElement.querySelector('.event-info') !== null ||
+                               eventElement.dataset.type === 'event' ||
+                               !isTypeDefinition; // Default to event if not clearly a type
+
+            const result = evaluatePatterns(patterns, pattern => {
+                switch (pattern.value) {
+                    case 'event': return isEventEntry;
+                    case 'type': return isTypeDefinition;
+                    default: return false;
+                }
+            });
+
+            return result;
+        }
+    },
+
+    hide: {
+        regex: /hide:([^\s]+)/g,
+        description: "Hide specific sections from display (supports comma-separated values, no negation support)",
+        examples: ["hide:code-context", "hide:examples", "hide:description", "hide:fields", "hide:badges", "hide:configurations", "hide:categories", "hide:description-missing", "hide:source", "hide:examples,fields,categories"],
+        usage: "Hide specific sections from the display. Multiple values can be separated by commas. Note: This pattern does not support negation (!) prefix.",
+        
+        // Enhanced usage for better formatting in help
+        detailedUsage: `
+            <p>Hide specific sections from the display to focus on the information you need.</p>
+            <div class="alert alert-warning mb-3">
+                <strong>Note:</strong> This pattern does not support negation with the <code>!</code> prefix. Use it only to hide sections, not to show only specific sections.
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Available Sections:</h6>
+                    <ul class="small">
+                        <li><code>code-context</code> - Code usage examples</li>
+                        <li><code>examples</code> - Event examples</li>
+                        <li><code>description</code> - Event descriptions</li>
+                        <li><code>fields</code> - Field tables</li>
+                        <li><code>badges</code> - Event badges</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>More Sections:</h6>
+                    <ul class="small">
+                        <li><code>configurations</code> - Configuration tables</li>
+                        <li><code>categories</code> - Event categories</li>
+                        <li><code>description-missing</code> - Missing description notices</li>
+                        <li><code>source</code> - Event source information</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-2">
+                <h6>Usage Tips:</h6>
+                <ul class="small">
+                    <li>Separate multiple sections with commas: <code>hide:examples,fields</code></li>
+                    <li>Combine with other patterns: <code>name:*GC* hide:badges,source</code></li>
+                    <li>Cannot be negated - <code>!hide:description</code> is not supported</li>
+                </ul>
+            </div>
+        `,
+        
+        // Mark this as an action pattern (not a filter)
+        isAction: true,
+        
+        // Reset all sections before executing hide actions
+        beforeAll: () => {
+            console.log('🎬 [BEFORE_ALL] Resetting section visibility before hide action');
+            showAllSections();
+        },
+
+        buildContextData: () => {
+            return ['code-context', 'examples', 'description', 'fields', 'badges', 'configurations', 'categories', 'description-missing', 'source'];
+        },
+
+        getSuggestions: (pattern, valueQuery, replaceCurrentTerm, input, cursorPos) => {
+            const sections = ['code-context', 'examples', 'description', 'fields', 'badges', 'configurations', 'categories', 'description-missing', 'source'];
+            
+            const baseDescriptions = {
+                'code-context': 'Hide code context sections',
+                'examples': 'Hide example sections',
+                'description': 'Hide description sections',
+                'fields': 'Hide field tables',
+                'badges': 'Hide event badges',
+                'configurations': 'Hide configuration tables',
+                'categories': 'Hide event categories',
+                'description-missing': 'Hide missing description notices',
+                'source': 'Hide event source information'
+            };
+            
+            // Handle comma-separated values
+            const currentValues = valueQuery.split(',');
+            const lastValue = currentValues[currentValues.length - 1].trim().toLowerCase();
+            
+            return sections
+                .filter(s => s.startsWith(lastValue) && !currentValues.slice(0, -1).includes(s))
+                .map(s => {
+                    const newValues = [...currentValues.slice(0, -1), s];
+                    return {
+                        type: 'completion',
+                        text: replaceCurrentTerm(input, cursorPos, `${pattern}:${newValues.join(',')}`),
+                        description: baseDescriptions[s],
+                        category: 'Hide Section'
+                    };
+                });
+        },
+
+        parse: (matches) => matches.map(match => {
+            // Split comma-separated values
+            const values = match.value.split(',').map(v => v.trim()).filter(v => v.length > 0);
+            return {
+                sections: values
+            };
+        }),
+
+        // Action patterns don't filter events, they perform actions after search
+        match: (patterns, eventElement) => {
+            return true; // Always return true for action patterns
+        },
+
+        // Execute the action after search is complete
+        executeAction: (parsedPatterns, searchContext) => {
+            console.log('🎬 [ACTION] Executing hide action with patterns:', parsedPatterns);
+            
+            if (!parsedPatterns || parsedPatterns.length === 0) {
+                return;
+            }
+            
+            // Collect all sections to hide
+            const sectionsToHide = new Set();
+            
+            // Simple hide logic (no negation support)
+            parsedPatterns.forEach(pattern => {
+                pattern.sections.forEach(section => {
+                    sectionsToHide.add(section);
+                });
+            });
+            
+            console.log('🎬 [ACTION] Sections to hide:', Array.from(sectionsToHide));
+            
+            // Store which sections should be hidden for use by other functions
+            searchContext.hiddenSections = sectionsToHide;
+            
+            // Map sections to CSS classes and apply hiding
+            const sectionClassMap = {
+                'code-context': '.code-context',
+                'examples': '.examples-section',
+                'description': '.description, .event-description, [class*="description"]',
+                'fields': '.field-table',
+                'badges': '.badge',
+                'configurations': '.event-config, .configuration',
+                'categories': '.categories',
+                'description-missing': '.description-missing',
+                'source': '.source'
+            };
+            
+            // Apply CSS classes for each section to hide - only within visible events
+            sectionsToHide.forEach(section => {
+                const cssSelector = sectionClassMap[section];
+                if (cssSelector) {
+                    // Get all visible events first
+                    const visibleEvents = Array.from(document.querySelectorAll('.event')).filter(event => {
+                        const style = window.getComputedStyle(event);
+                        return style.display !== 'none';
+                    });
+                    
+                    let totalHidden = 0;
+                    
+                    // Hide sections only within visible events
+                    visibleEvents.forEach(eventElement => {
+                        const elementsToHide = eventElement.querySelectorAll(cssSelector);
+                        elementsToHide.forEach(el => {
+                            el.style.display = 'none';
+                            totalHidden++;
+                        });
+                    });
+                    
+                    console.log(`🎬 [ACTION] Hiding ${totalHidden} elements for section "${section}" with selector "${cssSelector}" across ${visibleEvents.length} visible events`);
+                }
+            });
+        }
+    }
+};
+
+// ========================================
+// SEARCH CORE FUNCTIONALITY
+// ========================================
+
+// Expression parser for handling complex search queries with || and parentheses
+class SearchExpressionParser {
+    constructor(query) {
+        this.query = query;
+        this.tokens = this.tokenize(query);
+        this.position = 0;
+    }
+    
+    tokenize(query) {
+        const tokens = [];
+        let i = 0;
+        let openParenCount = 0;
+        
+        while (i < query.length) {
+            const char = query[i];
+            
+            if (char === '!') {
+                // Handle negation operator
+                tokens.push({ type: 'NOT', value: '!', pos: i });
+                i++;
+            } else if (char === '(') {
+                tokens.push({ type: 'LPAREN', value: '(', pos: i });
+                openParenCount++;
+                i++;
+            } else if (char === ')') {
+                tokens.push({ type: 'RPAREN', value: ')', pos: i });
+                if (openParenCount > 0) {
+                    openParenCount--;
+                }
+                i++;
+            } else if (char === '|' && query[i + 1] === '|') {
+                tokens.push({ type: 'OR', value: '||', pos: i });
+                i += 2;
+            } else if (char === ' ') {
+                // Skip whitespace, but track it for AND operations
+                const spaceStart = i;
+                while (i < query.length && query[i] === ' ') i++;
+                
+                // Only add AND token if we're between two terms/groups (not before/after OR or parens)
+                if (i < query.length && tokens.length > 0) {
+                    const lastToken = tokens[tokens.length - 1];
+                    const nextChar = query[i];
+                    const isNextOR = nextChar === '|' && query[i + 1] === '|';
+                    const isPrevOR = lastToken.type === 'OR';
+                    const isPrevNOT = lastToken.type === 'NOT';
+                    
+                    // Add AND only if: last token was TERM or RPAREN, next is not OR, and previous was not OR or NOT
+                    if ((lastToken.type === 'TERM' || lastToken.type === 'RPAREN') && !isNextOR && !isPrevOR && !isPrevNOT) {
+                        tokens.push({ type: 'AND', value: ' ', pos: spaceStart });
+                    }
+                }
+            } else {
+                // Find the end of this term
+                let start = i;
+                while (i < query.length && 
+                       query[i] !== '!' &&
+                       query[i] !== '(' && 
+                       query[i] !== ')' && 
+                       query[i] !== ' ' &&
+                       !(query[i] === '|' && query[i + 1] === '|')) {
+                    i++;
+                }
+                
+                if (i > start) {
+                    tokens.push({ 
+                        type: 'TERM', 
+                        value: query.substring(start, i), 
+                        pos: start 
+                    });
+                }
+            }
+        }
+        
+        // Automatically close any unclosed parentheses
+        while (openParenCount > 0) {
+            tokens.push({ type: 'RPAREN', value: ')', pos: query.length });
+            openParenCount--;
+        }
+        
+        return tokens;
+    }
+    
+    peek() {
+        return this.position < this.tokens.length ? this.tokens[this.position] : null;
+    }
+    
+    consume(expectedType = null) {
+        if (this.position >= this.tokens.length) return null;
+        const token = this.tokens[this.position++];
+        if (expectedType && token.type !== expectedType) {
+            throw new Error(`Expected ${expectedType}, got ${token.type} at position ${token.pos}`);
+        }
+        return token;
+    }
+    
+    // Parse the entire expression: handles OR at the top level
+    parseExpression() {
+        let left = this.parseAndExpression();
+        
+        while (this.peek() && this.peek().type === 'OR') {
+            this.consume('OR');
+            const right = this.parseAndExpression();
+            left = { type: 'OR', left, right };
+        }
+        
+        return left;
+    }
+    
+    // Parse AND expressions (higher precedence than OR)
+    parseAndExpression() {
+        let left = this.parsePrimary();
+        
+        while (this.peek() && this.peek().type === 'AND') {
+            this.consume('AND');
+            const right = this.parsePrimary();
+            left = { type: 'AND', left, right };
+        }
+        
+        return left;
+    }
+    
+    // Parse primary expressions: terms, parenthesized expressions, and negations
+    parsePrimary() {
+        const token = this.peek();
+        
+        if (!token) return null;
+        
+        if (token.type === 'NOT') {
+            // Handle negation
+            this.consume('NOT');
+            const expr = this.parsePrimary();
+            return { type: 'NOT', operand: expr };
+        } else if (token.type === 'LPAREN') {
+            this.consume('LPAREN');
+            const expr = this.parseExpression();
+            this.consume('RPAREN');
+            return expr;
+        } else if (token.type === 'TERM') {
+            return { type: 'TERM', value: this.consume('TERM').value };
+        }
+        
+        throw new Error(`Unexpected token ${token.type} at position ${token.pos}`);
+    }
+    
+    parse() {
+        if (this.tokens.length === 0) return null;
+        
+        try {
+            const result = this.parseExpression();
+            if (this.position < this.tokens.length) {
+                const remaining = this.tokens[this.position];
+                console.warn(`Unexpected token after parsing: ${remaining.type} at position ${remaining.pos}`);
+            }
+            return result;
+        } catch (error) {
+            console.warn('Parse error, falling back to simple parsing:', error);
+            // Fallback to simple term-based parsing
+            return this.tokens.filter(t => t.type === 'TERM')
+                            .reduce((acc, token, index) => {
+                                if (index === 0) return { type: 'TERM', value: token.value };
+                                return { type: 'AND', left: acc, right: { type: 'TERM', value: token.value } };
+                            }, null);
+        }
+    }
+}
+
+function parseSearchQuery(query) {
+    // Parse the expression tree
+    const parser = new SearchExpressionParser(query);
+    const expressionTree = parser.parse();
+    
+    // Extract filters and actions from all terms in the expression
+    const filters = {};
+    const actions = {};
+    const allTerms = [];
+    
+    function extractTerms(node) {
+        if (!node) return;
+        
+        if (node.type === 'TERM') {
+            allTerms.push(node.value);
+        } else if (node.type === 'AND' || node.type === 'OR') {
+            extractTerms(node.left);
+            extractTerms(node.right);
+        }
+    }
+    
+    extractTerms(expressionTree);
+    
+    // Process each term to extract patterns and text search
+    let textSearch = allTerms.join(' ');
+    
+    Object.entries(searchPatterns).forEach(([key, config]) => {
+        const matches = [];
+        
+        allTerms.forEach(term => {
+            const regex = new RegExp(config.regex.source, 'g');
+            let match;
+            
+            while ((match = regex.exec(term)) !== null) {
+                let negate = false;
+                let sensitive = false;
+                let value;
+
+                // Handle different regex patterns based on their structure
+                if (key === 'jdk' || key === 'graalvm' || key === 'type') {
+                    negate = match[1] === '!';
+                    value = match[2];
+                } else if (key === 'label' || key === 'config' || key === 'config-only' || key === 'has') {
+                    negate = match[1] === '!';
+                    value = match[2];
+                } else if (key === 'hide') {
+                    // Hide pattern doesn't support negation: /hide:([^\s]+)/g
+                    negate = false;
+                    value = match[1];
+                } else if (key === 'file' || key === 'snippet') {
+                    negate = match[1] === '!';
+                    sensitive = match[2] === '-sensitive';
+                    value = match[3];
+                } else {
+                    negate = match[1] === '!';
+                    sensitive = match[2] === '-sensitive';
+                    value = match[3];
+                }
+
+                matches.push({
+                    value: value,
+                    sensitive: sensitive,
+                    negate: negate
+                });
+
+                // Remove the pattern from text search
+                textSearch = textSearch.replace(match[0], '').trim();
+            }
+        });
+
+        if (matches.length > 0) {
+            const parsedMatches = config.parse(matches);
+            
+            // Separate actions from filters based on the isAction flag
+            if (config.isAction) {
+                actions[key] = {
+                    patterns: parsedMatches,
+                    executor: config.executeAction
+                };
+            } else {
+                filters[key] = parsedMatches;
+            }
+        }
+    });
+
+    // Collect unique beforeAll functions from patterns that have matches
+    const beforeAllFunctions = [];
+    const seenBeforeAllFunctions = new Set();
+    
+    Object.entries(searchPatterns).forEach(([key, config]) => {
+        if (config.beforeAll && typeof config.beforeAll === 'function') {
+            // Check if this pattern has matches in filters or actions
+            if (filters[key] || actions[key]) {
+                // Use function.toString() to detect duplicate functions
+                const functionKey = config.beforeAll.toString();
+                if (!seenBeforeAllFunctions.has(functionKey)) {
+                    seenBeforeAllFunctions.add(functionKey);
+                    beforeAllFunctions.push({
+                        patternName: key,
+                        beforeAllFunction: config.beforeAll
+                    });
+                }
+            }
+        }
+    });
+
+    // Clean up text search
+    textSearch = textSearch.replace(/\s+/g, ' ').replace(/\|\|/g, ' ').replace(/[()]/g, ' ').trim();
+
+    return { textSearch, filters, actions, expressionTree, beforeAllFunctions };
+}
+
+function globMatch(pattern, text, caseSensitive = false) {
+    if (!pattern || !text) {
+        return false;
+    }
+
+    // Convert glob pattern to regex
+    const regexPattern = pattern
+        .replace(/[.+^${}()|[\]\\]/g, '\\$&') // Escape regex special chars except * and ?
+        .replace(/\*/g, '.*') // * matches any characters
+        .replace(/\?/g, '.'); // ? matches single character
+
+    const regex = new RegExp(regexPattern, caseSensitive ? '' : 'i');
+    const result = regex.test(text);
+    return result;
+}
+
+function matchesSearchCriteria(eventElement, textSearch, filters, fileContentMap = null, expressionTree = null) {
+
+    // If we have an expression tree, use it for advanced matching
+    if (expressionTree) {
+        return evaluateExpressionTree(expressionTree, eventElement, fileContentMap);
+    }
+
+    // Fallback to legacy matching for backward compatibility
+    // Text search using data attributes for better performance
+    if (textSearch) {
+
+        // Use data attributes first (much faster than DOM traversal)
+        const eventName = eventElement.dataset.name || '';
+        const eventDescription = eventElement.dataset.description || '';
+        const eventSection = eventElement.dataset.section || '';
+
+        const searchLower = textSearch.toLowerCase();
+
+        // Check data attributes first
+        const nameMatch = eventName.toLowerCase().includes(searchLower);
+        const descriptionMatch = eventDescription.toLowerCase().includes(searchLower);
+        const sectionMatch = eventSection.toLowerCase().includes(searchLower);
+
+        // If no match in data attributes, fall back to full text search
+        let contentMatch = false;
+        if (!nameMatch && !descriptionMatch && !sectionMatch) {
+            const eventContent = eventElement.textContent.toLowerCase();
+            contentMatch = eventContent.includes(searchLower);
+        }
+
+        if (!nameMatch && !descriptionMatch && !sectionMatch && !contentMatch) {
+            return false;
+        }
+    }
+
+    // Apply all filter patterns
+    for (const [filterKey, filterValue] of Object.entries(filters)) {
+        const pattern = searchPatterns[filterKey];
+        if (pattern) {
+            // Pass fileContentMap to patterns that have fileMatcher property
+            const matchResult = pattern.fileMatcher
+                ? pattern.match(filterValue, eventElement, fileContentMap)
+                : pattern.match(filterValue, eventElement);
+            
+            if (!matchResult) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+// Evaluate expression trees for advanced search logic
+function evaluateExpressionTree(node, eventElement, fileContentMap) {
+    if (!node) return true;
+    
+    switch (node.type) {
+        case 'TERM':
+            return evaluateTerm(node.value, eventElement, fileContentMap);
+            
+        case 'NOT':
+            // Handle negation
+            const operandResult = evaluateExpressionTree(node.operand, eventElement, fileContentMap);
+            return !operandResult;
+            
+        case 'AND':
+            const leftResult = evaluateExpressionTree(node.left, eventElement, fileContentMap);
+            if (!leftResult) return false; // Short-circuit evaluation
+            return evaluateExpressionTree(node.right, eventElement, fileContentMap);
+            
+        case 'OR':
+            const leftOrResult = evaluateExpressionTree(node.left, eventElement, fileContentMap);
+            if (leftOrResult) return true; // Short-circuit evaluation
+            return evaluateExpressionTree(node.right, eventElement, fileContentMap);
+            
+        default:
+            console.warn('Unknown expression node type:', node.type);
+            return true;
+    }
+}
+
+// Evaluate a single term (could be a pattern or text search)
+function evaluateTerm(term, eventElement, fileContentMap) {
+    
+    // Check if the term is a pattern
+    let isPattern = false;
+    for (const [key, config] of Object.entries(searchPatterns)) {
+        const regex = new RegExp(config.regex.source, 'g');
+        const match = regex.exec(term);
+        
+        if (match) {
+            isPattern = true;
+            
+            // Parse the single match
+            let negate = false;
+            let sensitive = false;
+            let value;
+
+            if (key === 'jdk' || key === 'graalvm' || key === 'type') {
+                negate = match[1] === '!';
+                value = match[2];
+            } else if (key === 'label' || key === 'config' || key === 'config-only' || key === 'has') {
+                negate = match[1] === '!';
+                value = match[2];
+            } else if (key === 'hide') {
+                // Hide pattern doesn't support negation: /hide:([^\s]+)/g
+                negate = false;
+                value = match[1];
+            } else if (key === 'file' || key === 'snippet') {
+                negate = match[1] === '!';
+                sensitive = match[2] === '-sensitive';
+                value = match[3];
+            } else {
+                negate = match[1] === '!';
+                sensitive = match[2] === '-sensitive';
+                value = match[3];
+            }
+
+            const parsedPattern = config.parse([{
+                value: value,
+                sensitive: sensitive,
+                negate: negate
+            }]);
+            
+            // Action patterns (like hide:) should not filter events - they always return true
+            // and execute their action after the search is complete
+            if (config.isAction) {
+                console.log(`🎬 [TERM_EVAL] Skipping action pattern '${key}' for filtering - will execute after search`);
+                return true;
+            }
+            
+            // Pass fileContentMap to patterns that have fileMatcher property
+            const result = config.fileMatcher 
+                ? config.match(parsedPattern, eventElement, fileContentMap)
+                : config.match(parsedPattern, eventElement);
+            
+            return result;
+        }
+    }
+    
+    // If not a pattern, treat as text search
+    if (!isPattern) {
+        
+        const eventName = eventElement.dataset.name || '';
+        const eventDescription = eventElement.dataset.description || '';
+        const eventSection = eventElement.dataset.section || '';
+        
+        const searchLower = term.toLowerCase();
+        
+        const nameMatch = eventName.toLowerCase().includes(searchLower);
+        const descriptionMatch = eventDescription.toLowerCase().includes(searchLower);
+        const sectionMatch = eventSection.toLowerCase().includes(searchLower);
+        
+        if (nameMatch || descriptionMatch || sectionMatch) {
+            return true;
+        }
+        
+        // Fallback to full text search
+        const textContent = eventElement.textContent.toLowerCase();
+        return textContent.includes(searchLower);
+    }
+    
+    return false;
+}
+
+// Function to collect type dependencies from visible events
+function collectDependentTypes() {
+    const dependentTypeLinks = new Set();
+    
+    // Get all visible events (both explicitly shown and those not hidden)
+    const visibleEvents = Array.from(document.querySelectorAll('.event')).filter(event => {
+        const style = window.getComputedStyle(event);
+        return style.display !== 'none';
+    });
+    
+    console.log('🔍 [TYPES] Checking', visibleEvents.length, 'visible events for type dependencies');
+    
+    // First, collect direct type dependencies from visible events
+    visibleEvents.forEach(event => {
+        // Find field tables within this event
+        const fieldTables = event.querySelectorAll('.field-table');
+        
+        fieldTables.forEach(table => {
+            // Find all type links in the field table
+            const typeLinks = table.querySelectorAll('a[href^="#"]');
+            
+            typeLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && href.startsWith('#')) {
+                    const typeId = href.substring(1); // Remove the '#'
+                    if (typeId) {
+                        dependentTypeLinks.add(typeId);
+                        console.log('🔍 [TYPES] Found type dependency:', typeId);
+                    }
+                }
+            });
+        });
+    });
+    
+    // Now recursively collect dependencies from the types themselves
+    const allDependencies = new Set(dependentTypeLinks);
+    const processedTypes = new Set();
+    
+    // Process types in waves to avoid infinite loops
+    let hasNewTypes = true;
+    let maxIterations = 5; // Limit iterations to prevent infinite loops
+    let iteration = 0;
+    
+    while (hasNewTypes && iteration < maxIterations) {
+        hasNewTypes = false;
+        iteration++;
+        
+        // Get types that haven't been processed yet
+        const typesToProcess = Array.from(allDependencies).filter(id => !processedTypes.has(id));
+        
+        if (typesToProcess.length === 0) {
+            break;
+        }
+        
+        console.log(`🔍 [TYPES] Processing iteration ${iteration}, checking ${typesToProcess.length} types`);
+        
+        typesToProcess.forEach(currentTypeId => {
+            if (processedTypes.has(currentTypeId)) {
+                return;
+            }
+            
+            processedTypes.add(currentTypeId);
+            
+            // Find the type element with this ID
+            const typeElement = document.getElementById(currentTypeId);
+            if (typeElement) {
+                // Look for field tables within this type
+                const typeFieldTables = typeElement.querySelectorAll('.field-table');
+                
+                typeFieldTables.forEach(table => {
+                    // Find all type links in this type's field table
+                    const nestedTypeLinks = table.querySelectorAll('a[href^="#"]');
+                    
+                    nestedTypeLinks.forEach(link => {
+                        const href = link.getAttribute('href');
+                        if (href && href.startsWith('#')) {
+                            const nestedTypeId = href.substring(1);
+                            if (nestedTypeId && !allDependencies.has(nestedTypeId)) {
+                                allDependencies.add(nestedTypeId);
+                                hasNewTypes = true;
+                                console.log('🔍 [TYPES] Found nested type dependency:', nestedTypeId);
+                            }
+                        }
+                    });
+                });
+            }
+        });
+    }
+    
+    if (iteration >= maxIterations) {
+        console.warn('🔍 [TYPES] Reached maximum iterations, stopping type dependency collection to prevent infinite loops');
+    }
+    
+    console.log('🔍 [TYPES] Total type dependencies found:', allDependencies.size);
+    return Array.from(allDependencies);
+}
+
+// Function to show/hide dependent types based on search results
+function showDependentTypes(dependentTypeIds, hasVisibleEvents) {
+    // Find all possible type elements using multiple selectors
+    const allTypes = Array.from(document.querySelectorAll(".event-header")).concat(Array.from(document.querySelectorAll(".event")));
+    if (dependentTypeIds.length === 0) {
+        console.log('🔍 [TYPES] No dependent types found');
+        return;
+    }
+    console.log('🔍 [TYPES] Showing dependent types: ', dependentTypeIds);
+    
+    let shownTypes = 0;
+    const sectionsToShow = new Set();
+    
+    allTypes.forEach(typeEl => {        
+        const typeId = typeEl.dataset.name;
+        
+        if (typeId && dependentTypeIds.includes(typeId)) {
+            // Show this type as it's referenced by visible events
+            typeEl.style.display = 'block';
+            
+            // Find the parent section and mark it to be shown
+            const parentSection = typeEl.closest('.section');
+            if (parentSection) {
+                sectionsToShow.add(parentSection);
+            }
+
+            const tocElement = document.querySelector(`.nav-link[href="#${typeEl.id}"]`);
+            if (tocElement) {
+                tocElement.classList.remove('hidden-subtoc-section');
+            }
+            
+            shownTypes++;
+            console.log('🔍 [TYPES] Showing dependent type:', typeId);
+        }
+    });
+    
+    // Show the section headers for sections that contain dependent types
+    sectionsToShow.forEach(section => {
+        const sectionHeader = section.querySelector('.section-header');
+        if (sectionHeader) {
+            sectionHeader.style.display = 'block';
+            
+            // Also ensure the entire section is visible
+            section.style.display = 'block';
+            
+            console.log('🔍 [TYPES] Showing section header and section for dependent types');
+            
+            // Also update TOC to show this section
+            const sectionId = sectionHeader.id;
+            if (sectionId) {
+                const tocElement = document.querySelector(`.nav-link[href="#${sectionId}"]`);
+                if (tocElement) {
+                    tocElement.classList.remove('hidden-toc-section');
+                }
+            }
+        }
+    });
+    
+    console.log(`🔍 [TYPES] Processing complete: ${shownTypes / 2} types shown, ${sectionsToShow.size} sections shown`);
+    console.log('🔍 [TYPES] Dependent type IDs:', dependentTypeIds);
+}
+
+// Helper functions to hide specific sections
+function showAllSections() {
+    // Reset visibility for all hideable sections using the same selectors as the hide action
+    const allHideableSelectors = [
+        '.code-context',
+        '.examples-section', 
+        '.description', 
+        '.event-description', 
+        '[class*="description"]',
+        '.field-table',
+        '.badge',
+        '.event-config', 
+        '.configuration'
+    ];
+    
+    allHideableSelectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => {
+            el.style.display = '';
+        });
+    });
+}
+
+
+
+
+
+// ========================================
+// SEARCH ACTION FRAMEWORK
+// ========================================
+
+// Execute all post-search actions with the search context
+function executeSearchActions(actions, searchContext) {
+    if (!actions || Object.keys(actions).length === 0) {
+        console.log('🎬 [ACTION] No actions to execute');
+        return;
+    }
+    
+    console.log('🎬 [ACTION] Executing', Object.keys(actions).length, 'action types');
+    
+    // Execute each action type
+    Object.entries(actions).forEach(([actionType, actionData]) => {
+        
+        try {
+            console.log(`🎬 [ACTION] Executing ${actionType} action`);
+            
+            if (actionData.executor && typeof actionData.executor === 'function') {
+                // Call the action's executor function with its patterns and the search context
+                actionData.executor(actionData.patterns, searchContext.searchState);
+            } else {
+                console.warn(`🎬 [ACTION] No executor found for action type: ${actionType}`);
+            }
+        } catch (error) {
+            console.error(`🎬 [ACTION] Error executing ${actionType} action:`, error);
+        }
+    });
+    
+    console.log('🎬 [ACTION] All actions executed');
+}
+
+function performSearch(query) {
+    const startTime = performance.now();
+
+    const { textSearch, filters, actions, expressionTree, beforeAllFunctions } = parseSearchQuery(query);
+
+    // Store current search state
+    window.searchState.query = query;
+    window.searchState.filters = filters;
+    window.searchState.actions = actions;
+    window.searchState.expressionTree = expressionTree;
+
+    // Execute beforeAll functions from patterns that have matches
+    if (beforeAllFunctions && beforeAllFunctions.length > 0) {
+        console.log(`🎬 [BEFORE_ALL] Executing ${beforeAllFunctions.length} beforeAll functions`);
+        beforeAllFunctions.forEach(({ patternName, beforeAllFunction }) => {
+            try {
+                console.log(`🎬 [BEFORE_ALL] Executing beforeAll for pattern: ${patternName}`);
+                beforeAllFunction();
+            } catch (error) {
+                console.error(`🎬 [BEFORE_ALL] Error executing beforeAll for pattern ${patternName}:`, error);
+            }
+        });
+    }
+
+    // Get all event elements
+    const eventElements = document.querySelectorAll('.event');
+    const sectionElements = document.querySelectorAll('h1.section-header');
+
+    let totalVisible = 0;
+    let firstVisibleElement = null;
+    let exactMatchElement = null;
+
+    eventElements.forEach((eventEl, index) => {
+        const eventHeader = eventEl.previousElementSibling;
+        const matches = matchesSearchCriteria(eventEl, textSearch, filters, null, expressionTree);
+
+        let tocElement = document.querySelector(".nav-link[href=\"#" + eventHeader.id + "\"]");
+
+        if (matches) {
+            eventEl.style.display = 'block';
+            if (eventHeader && eventHeader.classList.contains('event-header')) {
+                eventHeader.style.display = 'block';
+            }
+            totalVisible++;
+            tocElement.classList.remove("hidden-subtoc-section");
+            
+            // Store the first visible element
+            if (!firstVisibleElement) {
+                firstVisibleElement = eventHeader || eventEl;
+            }
+            
+            // Check for exact matches when doing name or full-text search
+            if (!exactMatchElement && textSearch && textSearch.trim()) {
+                const eventName = eventEl.dataset.name || '';
+                const searchTerm = textSearch.trim().toLowerCase();
+                
+                // Check for exact name match (case-insensitive)
+                if (eventName.toLowerCase() === searchTerm) {
+                    exactMatchElement = eventHeader || eventEl;
+                }
+                // Check for exact match in event content if no name match yet
+                else if (!exactMatchElement) {
+                    // Check if the search term appears as a complete word in the event content
+                    const eventContent = eventEl.textContent || '';
+                    
+                    // Use word boundary regex to find exact word matches
+                    try {
+                        const wordBoundaryRegex = new RegExp('\\b' + searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+                        if (wordBoundaryRegex.test(eventContent)) {
+                            exactMatchElement = eventHeader || eventEl;
+                        }
+                    } catch (e) {
+                        // Fallback to simple includes if regex fails (e.g., invalid regex characters)
+                        if (eventContent.toLowerCase().includes(searchTerm)) {
+                            exactMatchElement = eventHeader || eventEl;
+                        }
+                    }
+                }
+            }
+        } else {
+            eventEl.style.display = 'none';
+            if (eventHeader && eventHeader.classList.contains('event-header')) {
+                eventHeader.style.display = 'none';
+            }
+            tocElement.classList.add("hidden-subtoc-section");
+        }
+    });
+
+    // Hide/show sections based on whether they have visible events and update sidebar
+    let visibleSections = 0;
+    sectionElements.forEach((section, index) => {
+        // Count visible events in this section more accurately
+        const allEvents = section.parentNode.querySelectorAll('.event');
+        const visibleEvents = Array.from(allEvents).filter(event => {
+            const style = window.getComputedStyle(event);
+            return style.display !== 'none';
+        });
+
+        let tocElement = document.querySelector(".nav-link[href=\"#" + section.id + "\"]");
+
+        if (visibleEvents.length > 0) {
+            // Show section
+            section.style.display = 'block';
+            visibleSections++;
+            tocElement.classList.remove("hidden-toc-section");
+        } else {
+            // Hide section
+            section.style.display = 'none';
+            tocElement.classList.add("hidden-toc-section");
+        }
+    });
+
+    // Update search results indicator
+    updateSearchResultsIndicator(totalVisible, eventElements.length);
+
+    // Show dependent types based on visible events
+    const dependentTypeIds = collectDependentTypes();
+    showDependentTypes(dependentTypeIds, totalVisible > 0);
+
+    // Execute all post-search actions
+    executeSearchActions(actions, {
+        totalVisible: totalVisible,
+        firstVisibleElement: firstVisibleElement,
+        exactMatchElement: exactMatchElement,
+        searchState: window.searchState
+    });
+
+    // Update URL state
+    if (query.trim()) {
+        pushURLState('search', query);
+    } else {
+        let url = new URL(window.location.href);
+        url.searchParams.delete('search');
+        window.history.pushState({}, "", url);
+    }
+
+    const endTime = performance.now();
+    console.log(`🔍 [SEARCH] Completed in ${(endTime - startTime).toFixed(2)}ms - ${totalVisible}/${eventElements.length} events visible`);
+    
+    // Return information about the search results
+    return {
+        totalVisible: totalVisible,
+        firstVisibleElement: firstVisibleElement,
+        exactMatchElement: exactMatchElement
+    };
+}
+
+function clearSearch() {
+
+    // Show all events, headers, and sections
+    const eventElements = document.querySelectorAll('.event, .event-header, .section');
+    eventElements.forEach(el => {
+        el.style.display = 'block';
+    });
+
+    // Show all types when search is cleared
+    const allTypes = Array.from(document.querySelectorAll([
+        '.type',
+        '.type-entry', 
+        '[data-type="type"]',
+        '[id]:not(.event):not(.event-header):not(.section-header)' // Elements with IDs that could be types
+    ].join(', ')));
+    
+    allTypes.forEach(typeEl => {
+        // Only show if it looks like a type (not an event or section)
+        if (!typeEl.classList.contains('event') && 
+            !typeEl.classList.contains('event-header') && 
+            !typeEl.classList.contains('section-header')) {
+            typeEl.style.display = 'block';
+            const typeHeader = typeEl.previousElementSibling;
+            if (typeHeader && (typeHeader.classList.contains('type-header') || typeHeader.tagName === 'H2' || typeHeader.tagName === 'H3')) {
+                typeHeader.style.display = 'block';
+            }
+            
+            // Show in TOC as well
+            const tocElement = document.querySelector(`.nav-link[href="#${typeEl.id}"]`);
+            if (tocElement) {
+                tocElement.classList.remove('hidden-subtoc-section');
+            }
+        }
+    });
+
+    // Clear search state
+    window.searchState = { query: '', filters: {}, actions: {}, searchTimeout: null };
+
+    // Clear search results indicator
+    updateSearchResultsIndicator(null, null);
+}
+
+function updateSearchResultsIndicator(visible, total) {
+    let indicator = document.getElementById('searchResultsIndicator');
+
+    if (!indicator) {
+        // Create indicator if it doesn't exist
+        indicator = document.createElement('div');
+        indicator.id = 'searchResultsIndicator';
+        indicator.className = 'search-results-indicator';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1000;
+            transition: opacity 0.3s;
+        `;
+        document.body.appendChild(indicator);
+    }
+
+    if (visible !== null && total !== null) {
+        indicator.textContent = `${visible} of ${total} events`;
+        indicator.style.opacity = '1';
+    } else {
+        indicator.style.opacity = '0';
+    }
+}
+
+// Helper function to scroll to search results with exact match prioritization
+function scrollToSearchResult(searchResults, context = '') {
+    if (!searchResults || !searchResults.totalVisible || searchResults.totalVisible === 0) {
+        return;
+    }
+    
+    // Prioritize exact match, fall back to first visible element
+    const targetElement = searchResults.exactMatchElement || searchResults.firstVisibleElement;
+    
+    if (targetElement && typeof targetElement.getBoundingClientRect === 'function') {
+        setTimeout(() => {
+            try {
+                // Calculate offset to account for fixed navbar
+                const navbar = document.querySelector('.navbar.fixed-top');
+                const navbarHeight = navbar ? navbar.offsetHeight + 20 : 100; // 20px extra padding
+                
+                const elementRect = targetElement.getBoundingClientRect();
+                const offsetTop = elementRect.top + window.pageYOffset - navbarHeight;
+                
+                // Ensure we don't scroll to negative positions
+                const scrollTop = Math.max(0, offsetTop);
+                
+                window.scrollTo({
+                    top: scrollTop,
+                    behavior: 'smooth'
+                });
+                
+                // Log what we're scrolling to for debugging
+                if (searchResults.exactMatchElement) {
+                    console.log(`🎯 [SEARCH] ${context} - scrolling to exact match`);
+                } else {
+                    console.log(`🔍 [SEARCH] ${context} - scrolling to first visible element`);
+                }
+            } catch (error) {
+                console.warn('🔍 [SEARCH] Error during scroll:', error);
+            }
+        }, context.includes('URL') ? 200 : 100); // Slightly longer delay when restoring from URL
+    }
+}
+
+// ========================================
+// SEARCH HELP SYSTEM
+// ========================================
+
+// Universal method to highlight search queries with proper pattern and value highlighting
+function highlightSearchQuery(query) {
+    if (!query || typeof query !== 'string') return query;
+    
+    // Create a copy to work with
+    let highlightedQuery = query;
+    
+    // Find all patterns in the query and highlight them
+    Object.keys(searchPatterns).forEach(key => {
+        const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        
+        // Pattern for: optional negation + pattern name + optional sensitivity + colon + value
+        // Updated regex to better handle pattern boundaries and values with spaces/special chars
+        const patternRegex = new RegExp(
+            `(!?)${escapedKey}([-\\w]*):([^\\s(),]+(?:\\([^)]*\\))?|[^,)]*(?=\\s*[,)]|$))`,
+            'gi'
+        );
+        
+        highlightedQuery = highlightedQuery.replace(patternRegex, (match, negation, suffix, value) => {
+            const patternPart = `${negation}${key}${suffix}:`;
+            return `<span class="search-pattern-property suggestion-text">${patternPart}</span><span class="suggestion-text">${value}</span>`;
+        });
+    });
+    
+    // Highlight logical operators
+    highlightedQuery = highlightedQuery.replace(/\|\|/g, '<span class="suggestion-operator">||</span>');
+    
+    // Highlight grouping parentheses (only if they haven't already been processed)
+    highlightedQuery = highlightedQuery.replace(/([()])/g, '<span class="suggestion-grouping">$1</span>');
+    
+    // Wrap the entire query in suggestion-text if it doesn't already contain spans
+    if (!highlightedQuery.includes('<span')) {
+        highlightedQuery = `<span class="suggestion-text">${highlightedQuery}</span>`;
+    }
+    
+    return highlightedQuery;
+}
+
+function generateSearchPatternsTableRows() {
+    let rows = '';
+    
+    // Special value highlighting rules for specific patterns
+    const specialFormatting = {
+        jdk: { highlightValues: true }
+    };
+    
+    Object.entries(searchPatterns).forEach(([key, config]) => {
+        // Skip hidden patterns or patterns that are only for internal beforeAll use
+        if (config.hidden) return;
+        
+        const patternName = `<span class="search-pattern-property suggestion-text">${key}:</span>`;
+        
+        // Extract sample values from examples (use all examples and clean them)
+        let sampleValues = [];
+        if (config.examples && config.examples.length > 0) {
+            sampleValues = config.examples
+                .map(example => {
+                    // Extract value part after the pattern (remove pattern prefix and negation)
+                    const match = example.match(new RegExp(`^!?${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:-sensitive)?:(.+)$`));
+                    return match ? match[1] : example.split(':').slice(1).join(':');
+                })
+                .filter(val => val && val.trim()) // Remove empty values
+                .filter((value, index, array) => array.indexOf(value) === index); // Remove duplicates
+        }
+        
+        // Format values HTML
+        let valuesHtml = '';
+        const formatting = specialFormatting[key] || {};
+        
+        if (formatting.highlightValues) {
+            // Highlight each value separately (like JDK versions)
+            valuesHtml = sampleValues
+                .map(value => `<span class="suggestion-text">${value}</span>`)
+                .join(', ');
+        } else {
+            // Regular code formatting
+            valuesHtml = sampleValues.map(value => `<span class="suggestion-text">${value}</span>`).join(', ');
+        }
+        
+        rows += `
+                                            <tr class="search-pattern-row" data-pattern-key="${key}" style="cursor: pointer;">
+                                                <td>${patternName}</td>
+                                                <td>${valuesHtml}</td>
+                                                <td>${config.description}</td>
+                                            </tr>`;
+    });
+    
+    return rows;
+}
+
+function generateSearchHelpContent() {
+    let helpContent = `
+        <div class="search-help">
+            <!-- Quick Reference Section -->
+            <div class="quick-reference mb-4">
+                <h4><i class="fas fa-rocket"></i> Quick Reference</h4>
+                
+                <!-- First row: Common Searches and Logical Operations -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">Common Searches</h6>
+                                <ul class="list-unstyled small">
+                                    <li>${highlightSearchQuery('garbage collection')} - Text search</li>
+                                    <li>${highlightSearchQuery('name:*GC*')} - Name with wildcards</li>
+                                    <li>${highlightSearchQuery('jdk:17')} - JDK 17 events</li>
+                                    <li>${highlightSearchQuery('graalvm:true')} - GraalVM supported</li>
+                                    <li>${highlightSearchQuery('name:*Thread* || name:*GC*')} - Thread OR GC events</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">Logical Operations</h6>
+                                <ul class="list-unstyled small">
+                                    <li><strong>AND:</strong> ${highlightSearchQuery('name:*GC* jdk:17')} (space separates)</li>
+                                    <li><strong>OR:</strong> ${highlightSearchQuery('jdk:17 || jdk:21')} (|| operator)</li>
+                                    <li><strong>Grouping:</strong> ${highlightSearchQuery('(jdk:17 || jdk:21) name:*GC*')}</li>
+                                    <li><strong>Negation:</strong> ${highlightSearchQuery('!jdk:8')} or ${highlightSearchQuery('!(name:A || name:B)')}</li>
+                                    <li><strong>Precedence:</strong> AND before OR</li>
+                                    <li class="mt-2"><small class="text-muted">Examples:<br>
+                                    ${highlightSearchQuery('name:*GC* jdk:17 || name:*Thread*')} → ${highlightSearchQuery('(name:*GC* jdk:17) || name:*Thread*')}<br>
+                                    ${highlightSearchQuery('!(name:A || name:B) jdk:17')} → ${highlightSearchQuery('(!(name:A || name:B)) jdk:17')}</small></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Second row: Search Patterns Table -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">Search Patterns Reference</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Pattern</th>
+                                                <th>Example Values</th>
+                                                <th>Description</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="searchPatternsTableBody">
+                                            <!-- Table content will be dynamically generated -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <strong>Note:</strong> Prefix any pattern with ${highlightSearchQuery('!')} to exclude matches. 
+                                        Add ${highlightSearchQuery('-sensitive')} for case-sensitive matching where supported.
+                                        <br>
+                                        <i class="fas fa-mouse-pointer"></i> <strong>Tip:</strong> Click on any pattern row to jump to its detailed description below.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Complex Examples Section -->
+            <div class="complex-examples mb-4">
+                <h4><i class="fas fa-lightbulb"></i> Complex Search Examples</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Performance Analysis</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                ${highlightSearchQuery('name:*GC* jdk:17 fields:duration')}
+                                <br><small class="text-muted">GC events in JDK 17 with duration field</small>
+                            </li>
+                            <li class="mb-2">
+                                ${highlightSearchQuery('category:*Memory* !label:deprecated')}
+                                <br><small class="text-muted">Memory events excluding deprecated ones</small>
+                            </li>
+                            <li class="mb-2">
+                                ${highlightSearchQuery('fields:stackTrace,thread graalvm:true')}
+                                <br><small class="text-muted">GraalVM events with stack traces and thread info</small>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Development & Debugging</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                ${highlightSearchQuery('label:experimental category:Runtime')}
+                                <br><small class="text-muted">Experimental runtime events</small>
+                            </li>
+                            <li class="mb-2">
+                                ${highlightSearchQuery('config:default !graalvm:only')}
+                                <br><small class="text-muted">Default config events not GraalVM-only</small>
+                            </li>
+                            <li class="mb-2">
+                                ${highlightSearchQuery('name-sensitive:*Thread* jdk:21')}
+                                <br><small class="text-muted">Case-sensitive thread events in JDK 21</small>
+                            </li>
+                            <li class="mb-2">
+                                ${highlightSearchQuery('!(name:*Test* || name:*Mock*)')}
+                                <br><small class="text-muted">Exclude both test and mock events</small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="features-help mt-4">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-magic"></i> Wildcards
+                                </h6>
+                                <ul class="list-unstyled small">
+                                    <li>${highlightSearchQuery('*')} - Matches any number of characters</li>
+                                    <li>${highlightSearchQuery('?')} - Matches exactly one character</li>
+                                    <li>${highlightSearchQuery('name:Thread*Event')} - Starts with "Thread", ends with "Event"</li>
+                                    <li>${highlightSearchQuery('name:*GC?Event')} - Contains "GC" + single char + "Event"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-font"></i> Case Sensitivity
+                                </h6>
+                                <ul class="list-unstyled small">
+                                    <li><strong>Default:</strong> Case-insensitive</li>
+                                    <li><strong>Sensitive:</strong> Add ${highlightSearchQuery('-sensitive')} suffix</li>
+                                    <li>${highlightSearchQuery('name:gcevent')} - Matches "GCEvent"</li>
+                                    <li>${highlightSearchQuery('name-sensitive:GCEvent')} - Exact case only</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-ban"></i> Exclusions
+                                </h6>
+                                <ul class="list-unstyled small">
+                                    <li><strong>Exclude:</strong> Prefix with ${highlightSearchQuery('!')}</li>
+                                    <li>${highlightSearchQuery('!label:deprecated')} - Hide deprecated</li>
+                                    <li>${highlightSearchQuery('!jdk:8')} - Exclude JDK 8 events</li>
+                                    <li>${highlightSearchQuery('!name:*Test*')} - Hide test events</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Operator Precedence Section -->
+            <div class="operator-precedence mb-4">
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <h6 class="card-title text-primary">
+                            <i class="fas fa-sort-amount-down"></i> Operator Precedence
+                        </h6>
+                        <p class="small mb-2">Understanding how operators are processed (highest to lowest priority):</p>
+                        <ol class="small">
+                            <li><strong>Parentheses ${highlightSearchQuery('( )')}</strong> - Highest priority, evaluated first</li>
+                            <li><strong>AND (space)</strong> - Medium priority, multiple patterns must all match</li>
+                            <li><strong>OR ${highlightSearchQuery('||')}</strong> - Lowest priority, any pattern can match</li>
+                        </ol>
+                        <div class="mt-2">
+                            <strong>Example:</strong> ${highlightSearchQuery('name:*GC* jdk:17 || name:*Thread* jdk:21')}
+                            <br><small class="text-muted">Interpreted as: ${highlightSearchQuery('(name:*GC* jdk:17) || (name:*Thread* jdk:21)')}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Patterns Section -->
+            <div class="search-patterns">
+                <h4><i class="fas fa-search"></i> Search Patterns</h4>`;
+
+    // Generate help content from pattern definitions with improved formatting
+    Object.entries(searchPatterns).forEach(([key, config]) => {
+        const displayName = key.replace('-', '-').split('-').map(word =>
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+
+        helpContent += `
+            <div class="search-pattern-help mb-4 border-start border-3 border-info ps-3" id="pattern-detail-${key}">
+                <h5 class="text-info mb-2">
+                    <i class="fas fa-filter me-2"></i><span class="search-pattern-property suggestion-text bg-light text-primary px-2 py-1 rounded">${key}:</span> ${displayName} Search
+                </h5>
+                <p class="mb-2">${config.description}</p>
+                <div class="alert alert-light mb-2">
+                    ${config.detailedUsage ? config.detailedUsage : `<small class="text-muted">${config.usage}</small>`}
+                </div>
+                <div class="examples">
+                    <strong class="text-dark">Examples:</strong>
+                    <div class="ms-3 mt-1">`;
+
+        config.examples.forEach(example => {
+            // Use the universal highlighting method
+            const highlightedExample = highlightSearchQuery(example);
+            helpContent += highlightedExample;
+            if (config.examples.indexOf(example) < config.examples.length - 1) {
+                helpContent += ', ';
+            }
+        });
+
+        helpContent += `
+                    </div>
+                </div>
+            </div>`;
+    });
+
+    helpContent += `
+            </div>
+
+    `;
+
+    return helpContent;
+}
+
+function showSearchHelp() {
+    const helpContent = generateSearchHelpContent();
+
+    // Create and show Bootstrap modal
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'searchHelpModal';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Search Help</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    ${helpContent}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    
+    // Populate the search patterns table dynamically
+    const tableBody = modal.querySelector('#searchPatternsTableBody');
+    if (tableBody) {
+        tableBody.innerHTML = generateSearchPatternsTableRows();
+        
+        // Add click handlers to table rows for focusing on detailed descriptions
+        const patternRows = tableBody.querySelectorAll('.search-pattern-row');
+        patternRows.forEach(row => {
+            row.addEventListener('click', () => {
+                const patternKey = row.dataset.patternKey;
+                const detailElement = modal.querySelector(`#pattern-detail-${patternKey}`);
+                
+                if (detailElement) {
+                    // Add visual feedback to the clicked row
+                    patternRows.forEach(r => r.classList.remove('table-active'));
+                    row.classList.add('table-active');
+                    
+                    // Smooth scroll to the detailed description
+                    detailElement.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start',
+                        inline: 'nearest'
+                    });
+                    
+                    // Add a temporary highlight effect to the target section
+                    detailElement.style.backgroundColor = '#fff3cd';
+                    detailElement.style.transition = 'background-color 0.3s ease';
+                    
+                    setTimeout(() => {
+                        detailElement.style.backgroundColor = '';
+                    }, 1500);
+                }
+            });
+            
+            // Add hover effect for better UX
+            row.addEventListener('mouseenter', () => {
+                row.style.backgroundColor = '#f8f9fa';
+            });
+            
+            row.addEventListener('mouseleave', () => {
+                if (!row.classList.contains('table-active')) {
+                    row.style.backgroundColor = '';
+                }
+            });
+        });
+    }
+    
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+
+    // Clean up modal after hiding
+    modal.addEventListener('hidden.bs.modal', () => {
+        document.body.removeChild(modal);
+    });
+}
+
+// ========================================
+// SEARCH SUGGESTIONS SYSTEM
+// ========================================
+
+window.searchSuggestions = {
+    history: [],
+    contextData: {
+        jdkVersions: [],
+        fields: [],
+        categories: [],
+        labels: [],
+        configs: []
+    },
+    
+    init() {
+        this.loadHistory();
+        this.buildContextData();
+        console.log('🔍 [SUGGESTIONS] Initialized with context data:', this.contextData);
+    },
+    
+    loadHistory() {
+        try {
+            const stored = localStorage.getItem('jfr-search-history');
+            this.history = stored ? JSON.parse(stored) : [];
+            // Keep only recent 20 searches
+            this.history = this.history.slice(0, 20);
+        } catch (e) {
+            console.warn('🔍 [SUGGESTIONS] Failed to load search history:', e);
+            this.history = [];
+        }
+    },
+    
+    saveSearch(query) {
+        if (!query || query.length < 2) return;
+        
+        // Remove duplicates and add to front
+        this.history = this.history.filter(h => h.query !== query);
+        this.history.unshift({
+            query: query,
+            timestamp: Date.now(),
+            count: 1
+        });
+        
+        // Keep only recent 20 searches
+        this.history = this.history.slice(0, 20);
+        
+        try {
+            localStorage.setItem('jfr-search-history', JSON.stringify(this.history));
+        } catch (e) {
+            console.warn('🔍 [SUGGESTIONS] Failed to save search history:', e);
+        }
+    },
+    
+    buildContextData() {
+        // Use pattern-specific buildContextData methods
+        Object.entries(searchPatterns).forEach(([key, pattern]) => {
+            if (pattern.buildContextData) {
+                this.contextData[key] = pattern.buildContextData();
+            }
+        });
+        
+        console.log('🔍 [SUGGESTIONS] Built context data:', this.contextData);
+    },
+    
+    getSuggestions(input, cursorPos = input.length) {
+        console.log('🔍 [SUGGESTIONS] getSuggestions called with:', { input, cursorPos });
+        const suggestions = [];
+        const query = input.toLowerCase();
+        
+        // Enhanced parsing to handle complex expressions
+        const beforeCursor = input.substring(0, cursorPos);
+        const afterCursor = input.substring(cursorPos);
+        console.log('🔍 [SUGGESTIONS] Cursor analysis:', { beforeCursor, afterCursor });
+        
+        // Special case: if user is typing a single "|", only suggest completing to "||"
+        if (beforeCursor.endsWith('|') && !beforeCursor.endsWith('||')) {
+            // Check if this is the start of an OR operator (not part of something else)
+            const beforePipe = beforeCursor.slice(0, -1).trim();
+            if (beforePipe.length > 0 && !beforePipe.endsWith('|')) {
+                suggestions.push({
+                    type: 'operator-completion',
+                    text: beforeCursor + '|',
+                    description: 'Complete OR operator (||)',
+                    category: 'Operator'
+                });
+                return suggestions; // Return only this suggestion
+            }
+        }
+        
+        // Find the current context (term, operator, or parenthesis)
+        const currentContext = this.analyzeCurrentContext(beforeCursor, afterCursor);
+        
+        console.log('🔍 [SUGGESTIONS] Context analysis result:', currentContext);
+        
+        // 1. History suggestions (if input matches start of previous queries)
+        if (input.length > 0 && currentContext.type !== 'operator') {
+            const historySuggestions = this.history
+                .filter(h => h.query.toLowerCase().startsWith(query))
+                .slice(0, 3)
+                .map(h => ({
+                    type: 'history',
+                    text: h.query,
+                    description: 'Previous search',
+                    category: 'History'
+                }));
+            suggestions.push(...historySuggestions);
+        }
+        
+        // 2. Pattern-based suggestions (high priority - moved up)
+        if (currentContext.type === 'pattern' && currentContext.currentTerm.includes(':')) {
+            // User is typing a pattern value
+            const [patternPart, value] = currentContext.currentTerm.split(':', 2);
+            const valueQuery = (value || '').toLowerCase();
+            
+            // Special case: Handle !hide: autocomplete with warning
+            if (patternPart === '!hide') {
+                // Convert !hide: to hide: and add warning suggestion
+                const hideSuggestions = searchPatterns.hide.getSuggestions(
+                    'hide', // Use 'hide' instead of '!hide'
+                    valueQuery, 
+                    this.replaceCurrentTerm.bind(this), 
+                    input, 
+                    cursorPos
+                );
+                
+                // Add warning suggestion at the top
+                suggestions.push({
+                    type: 'warning',
+                    text: input.replace('!hide:', 'hide:'),
+                    description: '⚠️ Negation not supported for hide pattern - converted to regular hide',
+                    category: 'Warning'
+                });
+                
+                // Add the converted hide suggestions
+                suggestions.push(...hideSuggestions.map(s => ({
+                    ...s,
+                    text: s.text.replace('!hide:', 'hide:'),
+                    description: s.description + ' (converted from !hide:)',
+                    category: 'Hide Section (Converted)'
+                })));
+                
+                return suggestions.slice(0, 15);
+            }
+            
+            // Find the matching search pattern (handle negation and sensitivity)
+            const cleanPattern = patternPart.replace(/^!/, '');
+            const basePart = cleanPattern.replace(/-sensitive$/, '');
+            
+            let matchingPattern = null;
+            if (searchPatterns[cleanPattern]) {
+                matchingPattern = searchPatterns[cleanPattern];
+            } else if (searchPatterns[basePart]) {
+                matchingPattern = searchPatterns[basePart];
+            }
+            
+            if (matchingPattern && matchingPattern.getSuggestions) {
+                const patternSuggestions = matchingPattern.getSuggestions(
+                    patternPart, // Pass the original pattern name (including ! prefix)
+                    valueQuery, 
+                    this.replaceCurrentTerm.bind(this), 
+                    input, 
+                    cursorPos
+                );
+                suggestions.push(...patternSuggestions);
+            }
+        } else if (currentContext.isAfterOR) {
+            // High priority: When after OR (e.g., "name:Name || A" or "name:Name || ("), treat it like typing directly
+            console.log('🔍 [SUGGESTIONS] Detected isAfterOR - processing suggestions');
+            const currentInput = currentContext.currentTerm.replace(/^\s*\(*/, ''); // Remove leading whitespace and opening parens
+            console.log('🔍 [SUGGESTIONS] Cleaned currentInput:', currentInput);
+            
+            // Create a modified context that behaves like we're typing directly
+            const directContext = {
+                ...currentContext,
+                type: 'term',
+                isAfterOR: true,
+                currentTerm: currentInput
+            };
+            console.log('🔍 [SUGGESTIONS] Created directContext:', directContext);
+            
+            // Add pattern name suggestions (same as typing directly)
+            console.log('🔍 [SUGGESTIONS] Adding pattern name suggestions for isAfterOR');
+            this.addPatternNameSuggestions(suggestions, directContext, input, cursorPos);
+            
+            // Add event name suggestions (same as typing directly)  
+            console.log('🔍 [SUGGESTIONS] Adding event name suggestions for isAfterOR');
+            this.addEventNameSuggestions(suggestions, directContext, input, cursorPos);
+        }
+        
+        // 3. Pattern name suggestions (when not typing pattern value) 
+        // Always show pattern suggestions to make them discoverable
+        if ((currentContext.type === 'pattern' && !currentContext.currentTerm.includes(':')) || 
+            (currentContext.type === 'term' && input.length === 0)) {
+            this.addPatternNameSuggestions(suggestions, currentContext, input, cursorPos);
+        }
+        
+        // 4. Event name suggestions for direct search
+        if (currentContext.type === 'term' || 
+           (currentContext.type === 'pattern' && currentContext.currentTerm.length > 0 && !currentContext.currentTerm.includes(':'))) {
+            this.addEventNameSuggestions(suggestions, currentContext, input, cursorPos);
+        }
+        
+        // 4.5. Special case: After a complete pattern with space (e.g., "name:Name ")
+        // This should suggest everything like starting a new search
+        if (currentContext.type === 'term' && currentContext.currentTerm === '' && 
+            currentContext.precedingText && !currentContext.precedingText.endsWith('||')) {
+            // Check if the preceding text ends with a complete pattern
+            const lastTerm = this.getLastCompleteTerm(currentContext.precedingText);
+            if (this.isCompletePattern(lastTerm)) {
+                console.log('🔍 [SUGGESTIONS] Detected complete pattern with space - suggesting everything');
+                
+                // Create a context that behaves like starting fresh
+                const freshContext = {
+                    ...currentContext,
+                    currentTerm: '',
+                    isAfterCompletePattern: true
+                };
+                
+                // Add all pattern name suggestions
+                this.addPatternNameSuggestions(suggestions, freshContext, input, cursorPos);
+                
+                // Add event name suggestions  
+                this.addEventNameSuggestions(suggestions, freshContext, input, cursorPos);
+            }
+        }
+        
+        // 5. Operator suggestions (|| for OR operations) - moved down
+        if (this.shouldSuggestOperators(currentContext)) {
+            suggestions.push({
+                type: 'operator',
+                text: beforeCursor + ' || ',
+                description: 'Logical OR - matches either condition',
+                category: 'Operator'
+            });
+        }
+        
+        // 6. Default suggestions for empty or short input OR when after || OR when we have few specific suggestions
+        if (input.length <= 2 || currentContext.isAfterOR || suggestions.length < 5) {
+            this.addDefaultSuggestions(suggestions, input, currentContext);
+        }
+        
+        // 7. Parentheses suggestions for grouping (moved to bottom)
+        const groupingSuggestions = [];
+        if (this.shouldSuggestParentheses(currentContext)) {
+            if (currentContext.canOpenParen) {
+                groupingSuggestions.push({
+                    type: 'grouping',
+                    text: beforeCursor + '(',
+                    description: 'Start expression group',
+                    category: 'Grouping'
+                });
+            }
+            if (currentContext.canCloseParen) {
+                groupingSuggestions.push({
+                    type: 'grouping',
+                    text: beforeCursor + ')',
+                    description: 'End expression group',
+                    category: 'Grouping'
+                });
+            }
+        }
+        
+        // Enhanced deduplication: Remove duplicates and similar suggestions while preserving warnings
+        const deduplicatedSuggestions = [];
+        const seenTexts = new Set();
+        const seenPatterns = new Set();
+        
+        suggestions.forEach(suggestion => {
+            // Always keep warning suggestions
+            if (suggestion.type === 'warning') {
+                deduplicatedSuggestions.push(suggestion);
+                return;
+            }
+            
+            // For other suggestions, check for exact text duplicates
+            if (seenTexts.has(suggestion.text)) {
+                return;
+            }
+            
+            // For pattern suggestions, also check for similar patterns
+            if (suggestion.category && suggestion.category.includes('Pattern')) {
+                // Extract the pattern part (e.g., "hide:" from "hide:")
+                const patternMatch = suggestion.text.match(/(\w+):/);
+                if (patternMatch) {
+                    const patternName = patternMatch[1];
+                    
+                    // Skip if we've already seen this pattern type, unless it's a conversion
+                    if (seenPatterns.has(patternName) && !suggestion.category.includes('Converted')) {
+                        return;
+                    }
+                    seenPatterns.add(patternName);
+                }
+            }
+            
+            seenTexts.add(suggestion.text);
+            deduplicatedSuggestions.push(suggestion);
+        });
+        
+        const allSuggestions = [...deduplicatedSuggestions, ...groupingSuggestions];
+        console.log('🔍 [SUGGESTIONS] Final suggestions count:', allSuggestions.length);
+        console.log('🔍 [SUGGESTIONS] Final suggestions:', allSuggestions.map(s => ({ text: s.text, category: s.category, type: s.type })));
+        return allSuggestions.slice(0, 15);
+    },
+    
+    analyzeCurrentContext(beforeCursor, afterCursor) {
+        const fullInput = beforeCursor + afterCursor;
+        
+        // Find the last complete token before cursor
+        let currentTerm = '';
+        let termStart = beforeCursor.length;
+        
+        // Walk backwards to find the start of the current term
+        for (let i = beforeCursor.length - 1; i >= 0; i--) {
+            const char = beforeCursor[i];
+            if (char === ' ' || char === '(' || char === ')') {
+                // Check if this space is part of || operator
+                if (char === ' ' && i > 0 && beforeCursor.substring(i-1, i+1) === '||') {
+                    continue; // Skip spaces around ||
+                }
+                termStart = i + 1;
+                break;
+            }
+            if (i === 0) {
+                termStart = 0;
+            }
+        }
+        
+        currentTerm = beforeCursor.substring(termStart);
+        
+        console.log('🔍 [SUGGESTIONS] Term parsing result:', { termStart, currentTerm });
+        
+        // Analyze what came before
+        const precedingText = beforeCursor.substring(0, termStart).trim();
+        const hasPattern = /\w+:\w*$/.test(precedingText);
+        const endsWithOperator = precedingText.endsWith('||');
+        const hasOpenParen = this.countUnmatchedParens(precedingText) > 0;
+        
+        console.log('🔍 [SUGGESTIONS] Preceding analysis:', { precedingText, hasPattern, endsWithOperator, hasOpenParen });
+        
+        // Check if we're effectively after an OR operator, even if there's whitespace/parens
+        // This handles cases like "name:Name || A" where currentTerm is "A"
+        let isAfterOR = false;
+        if (endsWithOperator) {
+            // If preceding text ends with ||, we're always after OR regardless of currentTerm content
+            console.log('🔍 [SUGGESTIONS] isAfterOR: true (after || operator)');
+            isAfterOR = true;
+        } else {
+            console.log('🔍 [SUGGESTIONS] isAfterOR: false', { endsWithOperator, currentTerm });
+        }
+        
+        // Determine context type
+        let contextType = 'term';
+        if (currentTerm.includes(':')) {
+            contextType = 'pattern';
+        } else if (currentTerm.startsWith('!')) {
+            contextType = 'pattern';
+        } else if (endsWithOperator) {
+            contextType = 'after-operator';
+        }
+        
+        return {
+            type: contextType,
+            currentTerm: currentTerm,
+            precedingText: precedingText,
+            canSuggestOR: this.canSuggestOR(precedingText, currentTerm),
+            canOpenParen: this.canOpenParen(precedingText, currentTerm),
+            canCloseParen: this.canCloseParen(precedingText, currentTerm),
+            hasOpenParen: hasOpenParen,
+            isAfterOR: isAfterOR
+        };
+    },
+    
+    shouldSuggestOperators(context) {
+        // Only suggest || after whitespaces (when currentTerm is empty)
+        // and only when we have a valid preceding pattern or parentheses
+        if (context.currentTerm !== '') return false; // Not after whitespace
+        
+        // Don't suggest if we already have || at the end
+        if (context.precedingText.endsWith('||')) return false;
+        
+        // Check if the preceding text ends with a valid pattern or closing parenthesis
+        const trimmedPreceding = context.precedingText.trim();
+        if (trimmedPreceding === '') return false; // Nothing preceding
+        
+        // Check if it ends with closing parenthesis
+        if (trimmedPreceding.endsWith(')')) return true;
+        
+        // Check if it ends with a complete pattern (property:value)
+        const lastTerm = this.getLastCompleteTerm(trimmedPreceding);
+        return this.isCompletePattern(lastTerm) || this.isCompleteEventName(lastTerm);
+    },
+    
+    shouldSuggestParentheses(context) {
+        return context.canOpenParen || context.canCloseParen;
+    },
+    
+    canSuggestOR(precedingText, currentTerm) {
+        // Don't suggest OR if we already have one at the end
+        if (precedingText.endsWith('||')) return false;
+        
+        // Don't suggest OR if the current term is incomplete
+        if (currentTerm.includes(':') && !this.isCompletePattern(currentTerm)) return false;
+        
+        // Suggest OR after complete patterns or event names
+        return precedingText.length > 0 || this.isCompleteEventName(currentTerm) || this.isCompletePattern(currentTerm);
+    },
+    
+    canOpenParen(precedingText, currentTerm) {
+        // Only suggest opening parenthesis after whitespace characters
+        // Check if currentTerm is empty (meaning we're positioned after whitespace)
+        if (currentTerm !== '') return false; // Not after whitespace
+        
+        // Can open paren at start of input
+        if (precedingText === '') return true; 
+        
+        // Can open paren after OR operator (with whitespace)
+        if (precedingText.endsWith('|| ')) return true; 
+        
+        // Can open paren after another opening paren (with whitespace)  
+        if (precedingText.endsWith('( ')) return true;
+        
+        // Can open paren after any content followed by whitespace
+        // This ensures we're only suggesting after actual space characters
+        if (precedingText.endsWith(' ')) return true;
+        
+        return false;
+    },
+    
+    canCloseParen(precedingText, currentTerm) {
+        // Can close paren if we have unmatched opening parens and a complete term
+        return this.countUnmatchedParens(precedingText + currentTerm) > 0 && 
+               (this.isCompletePattern(currentTerm) || this.isCompleteEventName(currentTerm));
+    },
+    
+    countUnmatchedParens(text) {
+        let count = 0;
+        for (const char of text) {
+            if (char === '(') count++;
+            else if (char === ')') count--;
+        }
+        return Math.max(0, count);
+    },
+    
+    isCompletePattern(term) {
+        // Check if the term looks like a complete pattern (has : and value)
+        const colonIndex = term.indexOf(':');
+        return colonIndex > 0 && colonIndex < term.length - 1;
+    },
+    
+    isCompleteEventName(term) {
+        // Check if the term could be an event name (no special characters except wildcards)
+        return term.length > 2 && !term.includes(':') && !term.includes('||') && !term.includes('(') && !term.includes(')');
+    },
+    
+    getLastCompleteTerm(text) {
+        // Extract the last complete term from text, handling operators and parentheses
+        if (!text) return '';
+        
+        // Split by || and get the last part
+        const orParts = text.split('||');
+        const lastOrPart = orParts[orParts.length - 1].trim();
+        
+        // Split by spaces and get the last term
+        const terms = lastOrPart.split(/\s+/).filter(t => t.length > 0);
+        if (terms.length === 0) return '';
+        
+        const lastTerm = terms[terms.length - 1];
+        
+        // Remove leading/trailing parentheses if present
+        return lastTerm.replace(/^\(+|\)+$/g, '');
+    },
+    
+    addPatternNameSuggestions(suggestions, context, input, cursorPos) {
+        console.log('🔍 [SUGGESTIONS] addPatternNameSuggestions called with:', { context, input, cursorPos });
+        const currentTermLower = (context.currentTerm || '').toLowerCase();
+        console.log('🔍 [SUGGESTIONS] currentTermLower:', currentTermLower);
+        
+        // Special case: Handle !hide pattern name suggestion with warning
+        if (currentTermLower === '!hide' || (currentTermLower.startsWith('!') && 'hide'.startsWith(currentTermLower.substring(1)))) {
+            // Add warning suggestion
+            suggestions.push({
+                type: 'warning',
+                text: this.replaceCurrentTerm(input, cursorPos, 'hide:'),
+                description: '⚠️ Negation not supported for hide pattern - use hide: instead',
+                category: 'Warning'
+            });
+            
+            // Add the converted hide pattern suggestion
+            suggestions.push({
+                type: 'completion',
+                text: this.replaceCurrentTerm(input, cursorPos, 'hide:'),
+                description: 'Hide specific sections from display (converted from !hide)',
+                category: 'Search Pattern (Converted)'
+            });
+        }
+        
+        // Dynamically generate pattern suggestions from searchPatterns object
+        const patternSuggestions = Object.entries(searchPatterns).map(([key, pattern]) => ({
+            pattern: key + ':',
+            desc: pattern.description,
+            example: pattern.examples && pattern.examples.length > 0 ? pattern.examples[0] : `${key}:value`
+        }));
+        
+        // If we have no current term (e.g., after ||), show all patterns
+        // Otherwise, filter by current term
+        const filteredPatterns = currentTermLower === '' ? 
+            patternSuggestions : 
+            patternSuggestions.filter(p => 
+                p.pattern.startsWith(currentTermLower) || 
+                p.desc.toLowerCase().includes(currentTermLower)
+            );
+        
+        console.log('🔍 [SUGGESTIONS] filteredPatterns count:', filteredPatterns.length);
+        
+        filteredPatterns.forEach(p => {
+            const suggestionText = this.replaceCurrentTerm(input, cursorPos, p.pattern);
+            console.log('🔍 [SUGGESTIONS] Adding pattern suggestion:', { pattern: p.pattern, suggestionText });
+            suggestions.push({
+                type: 'completion',
+                text: suggestionText,
+                description: p.desc,
+                category: 'Search Pattern',
+                example: p.example
+            });
+        });
+            
+        // Also suggest negated versions (but skip hide pattern)
+        if (currentTermLower.startsWith('!') || currentTermLower === '') {
+            const negatedPatterns = currentTermLower === '' ? 
+                patternSuggestions.slice(0, 3) : // Show first 3 when no current term
+                patternSuggestions.filter(p => ('!' + p.pattern).startsWith(currentTermLower));
+                
+            negatedPatterns.forEach(p => {
+                // Skip hide pattern for negation since it doesn't support it
+                if (p.pattern.startsWith('hide:')) {
+                    return;
+                }
+                
+                suggestions.push({
+                    type: 'completion',
+                    text: this.replaceCurrentTerm(input, cursorPos, '!' + p.pattern),
+                    description: 'Exclude: ' + p.desc.toLowerCase(),
+                    category: 'Negated Pattern'
+                });
+            });
+        }
+    },
+    
+    addEventNameSuggestions(suggestions, context, input, cursorPos) {
+        // Show event name suggestions if we have a partial term, if we're after OR, or after a complete pattern
+        const currentTerm = context.currentTerm || '';
+        const showEventNames = currentTerm.length > 0 || context.isAfterOR || context.isAfterCompletePattern;
+        
+        if (showEventNames && !currentTerm.includes(':')) {
+            const eventNames = searchPatterns.name.buildContextData();
+            const currentTermLower = currentTerm.toLowerCase();
+            
+            let matchingEvents;
+            if (currentTerm.length === 0) {
+                // If no current term (e.g., after || or after complete pattern), show popular events
+                matchingEvents = eventNames
+                    .filter(name => name.includes('GC') || name.includes('Thread') || 
+                                   name.includes('Class') || name.includes('Method') ||
+                                   name.includes('Memory') || name.includes('Java') ||
+                                   name.includes('Monitor') || name.includes('Exception'))
+                    .slice(0, 6);
+            } else {
+                // If we have a partial term, filter by it
+                matchingEvents = eventNames
+                    .filter(name => name.toLowerCase().includes(currentTermLower))
+                    .slice(0, 8);
+            }
+            
+            const eventSuggestions = matchingEvents.map(name => ({
+                type: 'completion',
+                text: this.replaceCurrentTerm(input, cursorPos, name),
+                description: `Search for "${name}" events`,
+                category: 'Event Name'
+            }));
+            
+            suggestions.push(...eventSuggestions);
+        }
+    },
+    
+    addDefaultSuggestions(suggestions, input, currentContext) {
+        // Add default event name suggestions when empty or after ||
+        if (input.length === 0) {
+            const eventNames = searchPatterns.name.buildContextData();
+            const popularEvents = eventNames
+                .filter(name => name.includes('GC') || name.includes('Thread') || 
+                               name.includes('Class') || name.includes('Method') ||
+                               name.includes('Memory') || name.includes('Java'))
+                .slice(0, 6)
+                .map(name => ({
+                    type: 'default',
+                    text: name,
+                    description: `Search for "${name}" events`,
+                    category: 'Events'
+                }));
+            suggestions.push(...popularEvents);
+        }
+        
+        const commonSuggestions = [
+            { text: 'name:*GC*', desc: 'All garbage collection events', cat: 'Example' },
+            { text: 'name:*Thread* || name:*GC*', desc: 'Thread or GC events (OR example)', cat: 'Example' },
+            { text: 'jdk:17 name:*Monitor*', desc: 'Monitor events in JDK 17 (AND example)', cat: 'Example' },
+            { text: '(jdk:17 || jdk:21) name:*GC*', desc: 'GC events in JDK 17 or 21 (grouping example)', cat: 'Example' },
+            { text: 'graalvm:true', desc: 'Events with GraalVM support', cat: 'Example' },
+            { text: 'fields:stackTrace', desc: 'Events with stack trace', cat: 'Example' },
+            { text: 'type:event', desc: 'JFR event entries only', cat: 'Example' },
+            { text: 'hide:code-context,examples', desc: 'Hide code context and examples sections', cat: 'Example' },
+            { text: 'hide:description', desc: 'Hide description sections', cat: 'Example' },
+            { text: 'hide:fields,badges', desc: 'Hide fields and badges sections', cat: 'Example' }
+        ];
+        
+        // Determine the filter term - use currentContext.currentTerm if available, otherwise use input
+        const filterTerm = (currentContext && currentContext.currentTerm) ? 
+            currentContext.currentTerm.toLowerCase() : 
+            input.toLowerCase();
+        
+        // Filter examples by current term when not empty
+        const filteredSuggestions = filterTerm.trim().length === 0 ? 
+            commonSuggestions : 
+            commonSuggestions.filter(s => 
+                s.text.toLowerCase().includes(filterTerm) ||
+                s.desc.toLowerCase().includes(filterTerm)
+            );
+        
+        filteredSuggestions.forEach(s => {
+            suggestions.push({
+                type: 'example',
+                text: s.text,
+                description: s.desc,
+                category: s.cat
+            });
+        });
+        
+        // Pattern starters are now handled by addPatternNameSuggestions dynamically
+    },
+    
+    replaceCurrentTerm(input, cursorPos, newTerm) {
+        const beforeCursor = input.substring(0, cursorPos);
+        const afterCursor = input.substring(cursorPos);
+        
+        // Find the current term boundaries, considering operators and parentheses
+        let termStart = 0;
+        let termEnd = cursorPos;
+        
+        // Walk backwards to find the start of the current term
+        for (let i = cursorPos - 1; i >= 0; i--) {
+            const char = beforeCursor[i];
+            if (char === ' ' || char === '(' || char === ')') {
+                // Check if this is part of || operator
+                if (char === ' ' && i > 0 && i < beforeCursor.length - 1) {
+                    const surrounding = beforeCursor.substring(Math.max(0, i-1), i+2);
+                    if (surrounding.includes('||')) {
+                        continue; // Skip spaces around ||
+                    }
+                }
+                termStart = i + 1;
+                break;
+            }
+        }
+        
+        // Walk forwards to find the end of the current term
+        for (let i = cursorPos; i < input.length; i++) {
+            const char = input[i];
+            if (char === ' ' || char === '(' || char === ')' || 
+                (char === '|' && i + 1 < input.length && input[i + 1] === '|')) {
+                termEnd = i;
+                break;
+            }
+        }
+        
+        const before = input.substring(0, termStart);
+        const after = input.substring(termEnd);
+        
+        return before + newTerm + after;
+    }
+};
+
+function showSearchSuggestions(input, suggestions) {
+    const suggestionsPanel = document.getElementById('searchSuggestions');
+    const suggestionsList = document.getElementById('suggestionsList');
+    
+    if (!suggestions || suggestions.length === 0) {
+        suggestionsPanel.classList.add('d-none');
+        return;
+    }
+    
+    // Group suggestions by category
+    const grouped = {};
+    suggestions.forEach(s => {
+        if (!grouped[s.category]) grouped[s.category] = [];
+        grouped[s.category].push(s);
+    });
+    
+    suggestionsList.innerHTML = '';
+    
+    // Define category order for better UX
+    const categoryOrder = ['Warning', 'Operator', 'Grouping', 'Event Name', 'Search Pattern', 'Search Pattern (Converted)', 'Hide Section (Converted)', 'Negated Pattern', 'Popular Events', 'Example', 'History'];
+    const sortedCategories = categoryOrder.filter(cat => grouped[cat]).concat(
+        Object.keys(grouped).filter(cat => !categoryOrder.includes(cat))
+    );
+    
+    // Add suggestions by category in preferred order
+    sortedCategories.forEach(category => {
+        const items = grouped[category];
+        if (!items) return;
+        
+        // Add category header if more than one category
+        if (Object.keys(grouped).length > 1) {
+            const categoryHeader = document.createElement('div');
+            let categoryClass = 'suggestion-category px-3 py-1 bg-light';
+            
+            // Add special styling for new categories
+            if (category === 'Operator') {
+                categoryClass += ' operator-category';
+            } else if (category === 'Grouping') {
+                categoryClass += ' grouping-category';
+            }
+            
+            categoryHeader.className = categoryClass;
+            categoryHeader.textContent = category;
+            suggestionsList.appendChild(categoryHeader);
+        }
+        
+        items.forEach((suggestion, index) => {
+            const item = document.createElement('button');
+            item.className = 'search-suggestion-item list-group-item list-group-item-action';
+            item.setAttribute('data-suggestion', suggestion.text);
+            
+            // Add special styling for warning suggestions
+            if (suggestion.type === 'warning') {
+                item.classList.add('list-group-item-warning');
+            }
+            
+            const mainDiv = document.createElement('div');
+            let mainClass = 'suggestion-text suggestion-text-highlighted';
+            
+            // Add special styling for new suggestion types
+            if (suggestion.type === 'operator') {
+                mainClass += ' suggestion-operator';
+            } else if (suggestion.type === 'grouping') {
+                mainClass += ' suggestion-grouping';
+            } else if (suggestion.type === 'warning') {
+                mainClass += ' suggestion-warning';
+            }
+            
+            mainDiv.className = mainClass;
+            
+            // Handle different display formats
+            if (suggestion.type === 'operator') {
+                mainDiv.innerHTML = '<strong>||</strong> (OR)';
+            } else if (suggestion.type === 'grouping') {
+                mainDiv.innerHTML = suggestion.text.includes('(') ? '<strong>(</strong> group' : '<strong>)</strong> end';
+            } else if (suggestion.type === 'warning') {
+                // For warning suggestions, show the corrected pattern
+                const correctedPattern = suggestion.text.trim().split(/\s+/).pop();
+                mainDiv.innerHTML = `<span class="text-warning">⚠️</span> ${highlightSearchPatterns(correctedPattern)}`;
+            } else {
+                // For pattern-based suggestions (containing :), show the full text
+                // For other suggestions, show only the relevant part
+                if (suggestion.text.includes(':') || suggestion.category === 'Example') {
+                    // Show full pattern or example text
+                    mainDiv.innerHTML = highlightSearchPatterns(suggestion.text);
+                } else {
+                    // Extract and show only the relevant part from the suggestion
+                    const suggestionParts = suggestion.text.trim().split(/\s+/);
+                    const lastPart = suggestionParts[suggestionParts.length - 1];
+                    mainDiv.innerHTML = highlightSearchPatterns(lastPart);
+                }
+            }
+            
+            const descDiv = document.createElement('div');
+            descDiv.className = 'suggestion-description';
+            if (suggestion.type === 'warning') {
+                descDiv.classList.add('text-warning');
+            }
+            descDiv.textContent = suggestion.description;
+            
+            item.appendChild(mainDiv);
+            item.appendChild(descDiv);
+            
+            if (suggestion.example) {
+                const exampleDiv = document.createElement('div');
+                exampleDiv.className = 'suggestion-description';
+                exampleDiv.innerHTML = `<small>e.g., <code>${highlightSearchPatterns(suggestion.example)}</code></small>`;
+                item.appendChild(exampleDiv);
+            }
+            
+            // Add click handler
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Apply suggestion immediately
+                console.log('🔍 [SUGGESTIONS] Click handler triggered for:', suggestion.text);
+                applySuggestion(suggestion.text);
+            });
+            
+            // Also handle mousedown to ensure the click registers before blur events
+            item.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+            });
+            
+            suggestionsList.appendChild(item);
+        });
+    });
+
+    suggestionsPanel.classList.remove('d-none');
+}function applySuggestion(suggestionText) {
+    const searchInput = document.getElementById('eventSearch');
+    
+    // Determine cursor positioning based on suggestion type
+    let finalText = suggestionText;
+    let cursorOffset = 0;
+    
+    // Handle different suggestion types
+    if (suggestionText.includes('||')) {
+        // For OR operator, position cursor after the space
+        finalText = suggestionText;
+        cursorOffset = 0; // Cursor at end
+    } else if (suggestionText.endsWith('(')) {
+        // For opening parenthesis, position cursor inside
+        finalText = suggestionText;
+        cursorOffset = 0; // Cursor at end, ready for input
+    } else if (suggestionText.endsWith(')')) {
+        // For closing parenthesis, position cursor after with space
+        finalText = suggestionText + ' ';
+        cursorOffset = 0;
+    } else if (suggestionText.endsWith(':')) {
+        // For patterns, position cursor after colon
+        finalText = suggestionText;
+        cursorOffset = 0;
+    } else {
+        // For complete suggestions, add space
+        finalText = suggestionText + ' ';
+        cursorOffset = 0;
+    }
+    
+    searchInput.value = finalText;
+    searchInput.focus();
+    
+    // Position cursor appropriately
+    setTimeout(() => {
+        const targetPos = finalText.length + cursorOffset;
+        searchInput.setSelectionRange(targetPos, targetPos);
+        
+        // Trigger input event to update suggestions for context-aware help
+        searchInput.dispatchEvent(new Event('input'));
+        
+        // For Enter key suggestion acceptance, always execute search
+        // For click suggestions, check if query has valid syntax first
+        const isFromEnterKey = arguments[1] === 'enter';
+        const isFromTabKey = arguments[1] === 'tab';
+        const query = finalText.trim();
+        
+        // Execute search for complete patterns/queries
+        const shouldExecuteSearch = isFromEnterKey || 
+                                  isFromTabKey || 
+                                  hasValidSearchSyntax(query) ||
+                                  (!query.endsWith(':') && query.length > 0 && !query.includes('||'));
+        
+        if (shouldExecuteSearch && query.length > 0) {
+            console.log('🔍 [SEARCH] Auto-executing search after suggestion application:', query);
+            window.searchSuggestions.saveSearch(query);
+            const searchResults = performSearch(query);
+            scrollToSearchResult(searchResults, 'Auto-suggestion search');
+        } else {
+            console.log('🔍 [SEARCH] Query after suggestion not ready for search:', query);
+        }
+    }, 0);
+    
+    // Hide suggestions after a small delay to ensure proper execution
+    setTimeout(() => {
+        hideSuggestions();
+    }, 10);
+}
+
+function hideSuggestions() {
+    const suggestionsPanel = document.getElementById('searchSuggestions');
+    suggestionsPanel.classList.add('d-none');
+}
+
+// Helper function to check if a search query has valid syntax
+function hasValidSearchSyntax(query) {
+    if (!query || !query.trim()) {
+        return false;
+    }
+    
+    const trimmedQuery = query.trim();
+    
+    try {
+        // Check for incomplete patterns that shouldn't trigger search
+        const incompletePatterns = [
+            /\w+:$/, // Ends with pattern prefix but no value (e.g., "name:")
+            /\|\|$/, // Ends with OR operator
+            /^\($/, // Only opening parenthesis
+            /\($/, // Ends with opening parenthesis
+            /^!$/, // Just negation operator
+            /!\s*$/, // Negation operator followed by whitespace only
+            /^!\w+:$/, // Negated pattern without value (e.g., "!name:")
+        ];
+        
+        // If query matches any incomplete pattern, it's not ready for search
+        for (const pattern of incompletePatterns) {
+            if (pattern.test(trimmedQuery)) {
+                return false;
+            }
+        }
+        
+        // Try to parse the query
+        const { textSearch, filters, expressionTree } = parseSearchQuery(trimmedQuery);
+        
+        // Check if we have meaningful content
+        const hasTextSearch = textSearch && textSearch.trim();
+        const hasFilters = Object.keys(filters).length > 0;
+        const hasContent = hasTextSearch || hasFilters;
+        
+        // For pattern-based queries, ensure they have complete values
+        if (hasFilters) {
+            // Check that all filter patterns have proper values
+            for (const [key, filterValues] of Object.entries(filters)) {
+                if (!filterValues || filterValues.length === 0) {
+                    return false;
+                }
+                // Ensure all values are meaningful (not empty strings)
+                const hasValidValues = filterValues.every(filter => {
+                    // Check for different types of filter values
+                    if (filter.pattern !== undefined) {
+                        return filter.pattern && filter.pattern.trim();
+                    }
+                    if (filter.value !== undefined) {
+                        return filter.value !== '' && filter.value !== null;
+                    }
+                    if (filter.feature !== undefined) {
+                        return filter.feature && filter.feature.trim();
+                    }
+                    // Default case - check if filter has any meaningful content
+                    return Object.values(filter).some(val => 
+                        val !== undefined && val !== null && val !== ''
+                    );
+                });
+                if (!hasValidValues) {
+                    return false;
+                }
+            }
+        }
+        
+        return hasContent;
+    } catch (error) {
+        // If parsing fails, consider it invalid syntax
+        console.warn('🔍 [SEARCH] Query syntax validation failed:', error);
+        return false;
+    }
+}
+
+// ========================================
+// SYNTAX HIGHLIGHTING FUNCTIONALITY
+// ========================================
+
+function highlightSearchPatterns(text) {
+    if (!text) return text;
+    
+    let highlightedText = text;
+    
+    // Highlight OR operators
+    highlightedText = highlightedText.replace(/\|\|/g, '<span class="search-pattern suggestion-operator">||</span>');
+    
+    // Highlight parentheses
+    highlightedText = highlightedText.replace(/[()]/g, '<span class="search-pattern suggestion-grouping">$&</span>');
+    
+    // Use consistent dark blue highlighting for all property names
+    const patternHighlights = {
+        'name:': 'search-pattern-property',
+        'label:': 'search-pattern-property',
+        'jdk:': 'search-pattern-property',
+        'graalvm:': 'search-pattern-property',
+        'config:': 'search-pattern-property',
+        'config-only:': 'search-pattern-property',
+        'has:': 'search-pattern-property',
+        'fields:': 'search-pattern-property',
+        'category:': 'search-pattern-property',
+        'file:': 'search-pattern-property',
+        'snippet:': 'search-pattern-property',
+        'type:': 'search-pattern-property',
+        'hide:': 'search-pattern-property',
+    };
+    
+    // Sort patterns by length (longest first) to avoid partial matches
+    const sortedPatterns = Object.keys(patternHighlights).sort((a, b) => b.length - a.length);
+    
+    for (const pattern of sortedPatterns) {
+        const className = patternHighlights[pattern];
+        // Match pattern with optional negation and case sensitivity, but only highlight the property part
+        const regex = new RegExp(`(!)?((${pattern.replace(':', '')}(-sensitive)?):)([^\\s\\|\\(\\)]+)`, 'gi');
+        highlightedText = highlightedText.replace(regex, (match, negate, propertyPart, unused1, unused2, value) => {
+            return `<span class="search-pattern ${className}">${propertyPart}</span>${value}`;
+        });
+    }
+    
+    return highlightedText;
+}
+
+// ========================================
+// SEARCH INITIALIZATION AND EVENT HANDLING
+// ========================================
+
+// Initialize search functionality
+$(function() {
+    const searchInput = document.getElementById('eventSearch');
+    const searchInfoBtn = document.getElementById('searchInfoBtn');
+
+    if (!searchInput || !searchInfoBtn) {
+        console.warn('Search elements not found - search functionality disabled');
+        return;
+    }
+
+    // Initialize suggestions system
+    window.searchSuggestions.init();
+
+    // Get initial search from URL and apply it
+    const initialSearch = getURLState('search', '');
+    if (initialSearch) {
+        console.log('🔍 [SEARCH] Restoring search from URL:', initialSearch);
+        searchInput.value = initialSearch;
+        // Use setTimeout to ensure the page is fully loaded before performing search
+        setTimeout(() => {
+            const searchResults = performSearch(initialSearch);
+            
+            // If there are results, scroll to exact match or first visible element
+            scrollToSearchResult(searchResults, 'Restoring URL search');
+        }, 100);
+    }
+
+    // Enhanced search input handling with suggestions
+    searchInput.addEventListener('input', function(e) {
+        const query = this.value;
+        const cursorPos = this.selectionStart;
+        
+        if (query.length > 0) {
+            const suggestions = window.searchSuggestions.getSuggestions(query, cursorPos);
+            showSearchSuggestions(query, suggestions);
+        } else {
+            // Show initial suggestions when empty
+            const suggestions = window.searchSuggestions.getSuggestions('', 0);
+            showSearchSuggestions('', suggestions);
+        }
+        
+        selectedSuggestionIndex = -1;
+    });
+
+    // Focus event to show suggestions
+    searchInput.addEventListener('focus', function(e) {
+        const query = this.value;
+        const cursorPos = this.selectionStart || this.value.length;
+        
+        const suggestions = window.searchSuggestions.getSuggestions(query, cursorPos);
+        if (suggestions.length > 0) {
+            showSearchSuggestions(query, suggestions);
+        }
+    });
+
+    // Enhanced keydown handling with suggestion navigation
+    searchInput.addEventListener('keydown', function(e) {
+        const suggestionsPanel = document.getElementById('searchSuggestions');
+        const suggestionItems = suggestionsPanel.querySelectorAll('.search-suggestion-item');
+        
+        // Handle ArrowDown when suggestions are hidden - show them
+        if (e.key === 'ArrowDown' && suggestionsPanel.classList.contains('d-none')) {
+            e.preventDefault();
+            const query = this.value;
+            const cursorPos = this.selectionStart || this.value.length;
+            
+            console.log('🔍 [SUGGESTIONS] ArrowDown pressed with hidden panel:', { query, cursorPos });
+            
+            // Get suggestions using the suggestions system
+            const suggestions = window.searchSuggestions.getSuggestions(query, cursorPos);
+            console.log('🔍 [SUGGESTIONS] Got suggestions for ArrowDown:', suggestions.length);
+            showSearchSuggestions(query, suggestions);
+            return;
+        }
+        
+        if (!suggestionsPanel.classList.contains('d-none') && suggestionItems.length > 0) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedSuggestionIndex = findNextSelectableSuggestion(suggestionItems, selectedSuggestionIndex, 1);
+                updateSuggestionSelection(suggestionItems);
+                return;
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedSuggestionIndex = findNextSelectableSuggestion(suggestionItems, selectedSuggestionIndex, -1);
+                updateSuggestionSelection(suggestionItems);
+                return;
+            } else if (e.key === 'Tab' && selectedSuggestionIndex >= 0) {
+                e.preventDefault();
+                const selectedSuggestion = suggestionItems[selectedSuggestionIndex].getAttribute('data-suggestion');
+                applySuggestion(selectedSuggestion, 'tab');
+                // Note: applySuggestion will handle search execution if syntax is valid
+                return;
+            }
+        }
+        
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            
+            // Always hide suggestions when Enter is pressed
+            hideSuggestions();
+            
+            // If a suggestion is selected, apply it
+            if (selectedSuggestionIndex >= 0 && suggestionItems.length > 0) {
+                const selectedSuggestion = suggestionItems[selectedSuggestionIndex].getAttribute('data-suggestion');
+                applySuggestion(selectedSuggestion);
+                // Note: applySuggestion will handle search execution if syntax is valid
+                return;
+            }
+            
+            // Perform search (or show all events if empty) only when no suggestion was selected
+            const query = this.value.trim();
+          
+                window.searchSuggestions.saveSearch(query);
+                const searchResults = performSearch(query);
+                
+                // If there are results, scroll to exact match or first visible element
+                scrollToSearchResult(searchResults, 'Enter key search');
+           
+            
+            // Keep focus on search field
+            this.focus();
+        } else if (e.key === 'Escape') {
+            hideSuggestions();
+            this.blur();
+        }
+    });
+
+    // Perform search when user clicks away (blur) if there's valid search text
+    searchInput.addEventListener('blur', function(e) {
+        const query = this.value.trim();
+        
+        // Only perform search if there's valid text and it's different from current search
+        if (query && hasValidSearchSyntax(query) && query !== window.searchState.query) {
+            console.log('🔍 [SEARCH] Auto-executing search on blur:', query);
+            window.searchSuggestions.saveSearch(query);
+            const searchResults = performSearch(query);
+            
+            // If there are results, scroll to exact match or first visible element
+            scrollToSearchResult(searchResults, 'Blur search');
+        }
+        
+        // Delay hiding suggestions to allow click events to process
+        setTimeout(() => {
+            hideSuggestions();
+        }, 150);
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        // Don't hide if clicking on suggestion items or search container
+        if (!e.target.closest('.search-container') && 
+            !e.target.closest('.search-suggestion-item') &&
+            !e.target.closest('#searchSuggestions')) {
+            hideSuggestions();
+        }
+    });
+
+    // Show help modal
+    searchInfoBtn.addEventListener('click', showSearchHelp);
+
+    // Clear search when other filters are used
+    const originalShowEvents = window.showEvents;
+    if (originalShowEvents) {
+        window.showEvents = function() {
+            // If there's an active search, clear it when version/variant filters are used
+            if (window.searchState.query) {
+                console.log('🔍 [SEARCH] Clearing search due to version/variant filter change');
+                searchInput.value = '';
+                clearSearch();
+                hideSuggestions();
+                let url = new URL(window.location.href);
+                url.searchParams.delete('search');
+                window.history.pushState({}, "", url);
+            }
+            originalShowEvents();
+        };
+    }
+
+    // Handle browser back/forward navigation
+    window.addEventListener('popstate', function() {
+        const searchFromURL = getURLState('search', '');
+        console.log('🔍 [SEARCH] Handling popstate, search from URL:', searchFromURL);
+        if (searchFromURL !== searchInput.value) {
+            searchInput.value = searchFromURL;
+            if (searchFromURL) {
+                const searchResults = performSearch(searchFromURL);
+                
+                // If there are results, scroll to exact match or first visible element
+                scrollToSearchResult(searchResults, 'Popstate navigation');
+            } else {
+                clearSearch();
+            }
+        }
+    });
+
+    // Focus search bar on Ctrl+F
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select(); // Select existing text for easy replacement
+            console.log('🔍 [SEARCH] Ctrl+F pressed - focused search bar');
+        }
+    });
+
+    console.log('🔍 [SEARCH] Search functionality with suggestions initialized');
+});
+
+// Helper function to find the next selectable suggestion (skipping warnings)
+function findNextSelectableSuggestion(suggestionItems, currentIndex, direction) {
+    const isWarning = (item) => {
+        // Check if this suggestion item represents a warning
+        const mainDiv = item.querySelector('.suggestion-text, .suggestion-warning');
+        return mainDiv && mainDiv.classList.contains('suggestion-warning');
+    };
+    
+    let nextIndex = currentIndex + direction;
+    
+    // Handle direction and bounds
+    if (direction > 0) {
+        // Moving down
+        while (nextIndex < suggestionItems.length) {
+            if (!isWarning(suggestionItems[nextIndex])) {
+                return nextIndex;
+            }
+            nextIndex++;
+        }
+        // If we've reached the end, stay at the last non-warning item
+        return currentIndex;
+    } else {
+        // Moving up
+        while (nextIndex >= 0) {
+            if (!isWarning(suggestionItems[nextIndex])) {
+                return nextIndex;
+            }
+            nextIndex--;
+        }
+        // If we've reached the beginning, go to -1 (no selection)
+        return -1;
+    }
+}
+
+function updateSuggestionSelection(suggestionItems) {
+    let selectedItem = null;
+    
+    suggestionItems.forEach((item, index) => {
+        if (index === selectedSuggestionIndex) {
+            item.classList.add('active');
+            selectedItem = item;
+        } else {
+            item.classList.remove('active');
+        }
+    });
+    
+    // Auto-scroll to keep the selected item visible
+    if (selectedItem) {
+        const suggestionsPanel = document.getElementById('searchSuggestions');
+        
+        if (suggestionsPanel) {
+            // The searchSuggestions div is the actual scrollable container
+            const itemRect = selectedItem.getBoundingClientRect();
+            const panelRect = suggestionsPanel.getBoundingClientRect();
+            
+            // Calculate positions relative to the scrollable container
+            const itemTop = selectedItem.offsetTop;
+            const itemBottom = itemTop + selectedItem.offsetHeight;
+            const containerScrollTop = suggestionsPanel.scrollTop;
+            const containerHeight = suggestionsPanel.clientHeight;
+            const containerBottom = containerScrollTop + containerHeight;
+            
+            // Check if item is above the visible area
+            if (itemTop < containerScrollTop) {
+                suggestionsPanel.scrollTop = itemTop - 10; // Add some padding
+            }
+            // Check if item is below the visible area
+            else if (itemBottom > containerBottom) {
+                suggestionsPanel.scrollTop = itemBottom - containerHeight + 10; // Add some padding
+            }
+            
+            console.log('🔍 [SUGGESTIONS] Scroll update:', {
+                itemTop, itemBottom, containerScrollTop, containerHeight, 
+                newScrollTop: suggestionsPanel.scrollTop
+            });
+        }
+    }
+}
+</script>
+{{#info.goatCounterUrls}}
+<script data-goatcounter="{.}/count"
+        async src="{.}/count.js"></script>
+{{/info.goatCounterUrls}}
+
+</body>
+</html>

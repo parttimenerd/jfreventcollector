@@ -1,0 +1,11 @@
+{{#since}}
+<a class="badge bg-primary jdk-badge" title="Since JDK {{version}}" href="{{file}}">{{version}}+</a>
+{{/since}}
+{{^since}}
+{{#versions}}
+<a class="badge bg-primary jdk-badge" title="JDK {{version}}" href="{{file}}">{{version}}</a>
+{{/versions}}
+{{/since}}
+{{#removedIn}}
+<a class="badge bg-danger jdk-badge" href="{{file}}" title="Removed in JDK {{version}}">until JDK {{version}}</a>
+{{/removedIn}}

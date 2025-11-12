@@ -1,0 +1,10 @@
+<div class="section mt-3 mb-5 hideable-part" data-jdks="{{jdks}}" data-graal-only="{{inGraalOnly}}" data-jdk-only="{{inJDKOnly}}">
+    <h1 class="section-header" data-jdks="{{jdks}}" data-graal-only="{{inGraalOnly}}" data-jdk-only="{{inJDKOnly}}">{{title}}</h1>
+    {{#entries}}
+
+        <h2 class="event-header hideable-part" data-jdks="{{value.jdks}}" data-graal-only="{{value.inGraalOnly}}" data-jdk-only="{{value.inJDKOnly}}" data-name="{{value.name}}">{{value.name}}</h2>
+        <div class="event hideable-part" data-jdks="{{value.jdks}}" data-graal-only="{{value.inGraalOnly}}" data-jdk-only="{{value.inJDKOnly}}" data-name="{{value.name}}" data-description="{{value.description}}" data-section="{{../title}}">
+            {{{value.inner}}}
+        </div>
+    {{/entries}}
+</div>

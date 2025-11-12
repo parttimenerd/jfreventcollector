@@ -1,0 +1,110 @@
+<p>
+  {{#flags}}
+  {{^isEnabled}}
+  <span class="badge bg-danger">disabled</span>
+  {{/isEnabled}}
+  {{#isExperimental}}
+  <span class="badge bg-danger">experimental</span>
+  {{/isExperimental}}
+  {{#isInternal}}
+  <span class="badge bg-danger">internal</span>
+  {{/isInternal}}
+  {{#throttle}}
+  <span class="badge bg-secondary">throttle</span>
+  {{/throttle}}
+  {{#cutoff}}
+  <span class="badge bg-secondary">cutoff</span>
+  {{/cutoff}}
+  {{#enabledInConfigs}}
+  <span class="badge bg-success" title="enabled in config {{.}}.jfc">{{.}}</span>
+  {{/enabledInConfigs}}
+  {{#hasStartTime}}
+  <a class="badge bg-info" href="#millis">startTime</a>
+  {{/hasStartTime}}
+  {{#hasDuration}}
+  <a class="badge bg-info" href="#millis">duration</a>
+  {{/hasDuration}}
+  {{#hasThread}}
+  <a class="badge bg-info" href="#thread">eventThread</a>
+  {{/hasThread}}
+  {{#hasStackTrace}}
+  <a class="badge bg-info" href="#stacktrace">stackTrace</a>
+  {{/hasStackTrace}}
+  {{#period}}
+  <span class="badge bg-success period-badge">{{.}}</span>
+  {{/period}}
+  {{^inGraalOnly}}
+    {{{jdkBadges}}}
+  {{/inGraalOnly}}
+  {{#inGraalOnly}}
+  <span class="badge bg-danger graal-only-badge">graal vm only</span>
+  {{/inGraalOnly}}
+  {{^inGraalOnly}}
+  {{#inGraal}}
+    <span class="badge bg-success graal-badge">graal vm</span>
+  {{/inGraal}}
+  {{/inGraalOnly}}
+  {{/flags}}
+</p>
+{{#source}}
+<p class="source fw-light">Source {{.}}</p>
+{{/source}}
+<p class="categories"><span class="fw-light">Category:</span>
+  {{#categories}}
+  {{value}} {{^last}} / {{/last}}
+  {{/categories}}
+</p>
+{{#showStackFilter}}
+<p class="stackFilter"><span class="fw-light">Excludes in stack trace:</span>
+  {{#stackFilter}}{{value}}{{^last}}, {{/last}}{{/stackFilter}}
+</p>
+{{/showStackFilter}}
+{{{appearsIn}}}
+<p class="event-description b-1 l-1 r-1">
+  {{#description}}
+  {{{.}}}
+  {{/description}}
+  <p class="event-additional-description {{#description}}t-1{{/description}}">
+    {{#additionalDescription}}
+    {{.}}
+    {{/additionalDescription}}
+    {{#descriptionMissing}}
+    <p class="description-missing">No additional description available.
+      Write your own and contribute it to
+      <a href="https://github.com/SAP/jfrevents/blob/main/additional.xml">jfreventcollector</a>
+      or directly to the <a href="https://github.com/openjdk/jdk">OpenJDK</a>.
+    </p>
+    {{/descriptionMissing}}
+  </p>
+</p>
+{{{aiGeneratedDescription}}}
+{{{codeContext}}}
+{{#configurations}}
+<p>
+<table class="table event-config table-hover mb-5">
+  <thead>
+  <tr class="table-header-row">
+    <th scope="col" style="width: 10em;">Configuration</th>
+    {{#headers}}
+    <th scope="col" style="width: 10em;">{{.}}</th>
+    {{/headers}}
+    <th scope="col">{{lastHeader}}</th>
+  </tr>
+  </thead>
+  <tbody>
+  {{#rows}}
+  <tr>
+    <th scope="row">{{name}}</th>
+    {{#cells}}
+    <td>{{{.}}}</td>
+    {{/cells}}
+  </tr>
+  {{/rows}}
+  </tbody>
+</table>
+</p>
+{{/configurations}}
+{{#fields}}
+<p>{{{.}}}</p>
+{{/fields}}
+{{{examples}}}

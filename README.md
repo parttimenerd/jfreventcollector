@@ -1,4 +1,4 @@
-[![REUSE status](https://api.reuse.software/badge/github.com/SAP/sapmachine-jfreventcollector)](https://api.reuse.software/info/github.com/SAP/sapmachine-jfreventcollector)
+[![REUSE status](https://api.reuse.software/badge/github.com/SAP/jfrevents)](https://api.reuse.software/info/github.com/SAP/jfrevents)
 
 JFR Event Collector
 =====================
@@ -14,8 +14,8 @@ The extended metadata includes
 - examples for events and their fields for the renaissance benchmark with different GCs
 - AI generated descriptions for events and their fields
 
-The event collection is presented at [SapMachine](https://sap.github.io/SapMachine/jfrevents/),
-created by [jfrevents-site-generator](https://github.com/SAP/sapmachinejfrevents-site-generator).
+The event collection is presented at [sap.github.io/jfrevents](https://sap.github.io/jfrevents/),
+created by the [website generator](./website).
 
 ## Want to contribute?
 
@@ -204,7 +204,7 @@ Only run `bin/releaser.py create_jfr` if you have a new JDK version installed.
 ## Support, Feedback, Contributing
 
 This project is open to feature requests/suggestions, bug reports etc.
-via [GitHub issues](https://github.com/SAP/sapmachine-jfreventcollector/issues).
+via [GitHub issues](https://github.com/SAP/jfrevents/issues).
 Contribution and feedback are encouraged and always welcome.
 For more information about how to contribute, the project structure,
 as well as additional contribution information,
@@ -217,7 +217,7 @@ Maven 3.6.3 seems to work fine.
 
 ## Security / Disclosure
 If you find any bug that may be a security problem, please follow our instructions at
-[in our security policy](https://github.com/SAP/sapmachine-jfreventcollector/security/policy) on how to report it.
+[in our security policy](https://github.com/SAP/jfrevents/security/policy) on how to report it.
 Please do not create GitHub issues for security-related doubts or problems.
 
 ## Code of Conduct

@@ -1,0 +1,51 @@
+{{#isNull}}
+    <div class="null-value">null</div>
+{{/isNull}}
+{{#stringValue}}
+    <div class="string-value">{{.}}{{#isTruncated}}<span class="value-truncated">&#8230;</span>{{/isTruncated}}
+    </div>
+{{/stringValue}}
+
+{{#firstComplex}}
+<table class="value-table table table-hover">
+    <tbody>
+{{/firstComplex}}
+
+{{#arrayValue.size}}
+    {{#arrayValue}}
+        {{{value}}}
+    {{/arrayValue}}
+    {{#isTruncated}}
+    <tr class="list-value" style="--depth: {{depth}}">
+        <th scope="row" class="object-key"></th>
+        <td class="value-type"></td>
+        <td class="value-truncated">&#8230;</td>
+    </tr>
+    {{/isTruncated}}
+{{/arrayValue.size}}
+
+{{#objectValue.size}}
+    {{#objectValue}}
+        <tr class="object-value" style="--depth: {{depth}}">
+            <th scope="row" class="object-key">{{value.key}}</th>
+            <td class="value-type">
+                {{#value.type.name}}
+                    {{#value.type.link}}
+                        <a href="{{value.type.link}}" class="type-link">{{value.type.name}}</a>{{/value.type.link}}{{^value.type.link}}{{value.type.name}}{{/value.type.link}}{{#value.contentType}}: {{#value.contentType.link}}<a href="{{{value.contentType.link}}}" class="type-link">{{value.contentType.name}}</a>{{/value.contentType.link}}{{^value.contentType.link}}{{value.contentType.name}}{{/value.contentType.link}}{{/value.contentType}}
+                {{/value.type.name}}
+            </td>
+            <td class="object-value">{{{value.value}}}</td>
+        </tr>
+    {{/objectValue}}
+    {{#isTruncated}}
+    <tr class="list-value" style="--depth: {{depth}}">
+        <th scope="row" class="object-key"></th>
+        <td class="value-truncated">&#8230;</td>
+    </tr>
+    {{/isTruncated}}
+{{/objectValue.size}}
+
+{{#firstComplex}}
+    </tbody>
+</table>
+{{/firstComplex}}

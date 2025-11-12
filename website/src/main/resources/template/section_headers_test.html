@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dependent Types Section Headers Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { 
+            margin: 10px 0; 
+            padding: 10px; 
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>JFR Events Site - Dependent Types Section Headers Enhancement</h1>
+    
+    <div class="test-result">
+        <h2>✅ Enhancement: Show Section Headers for Dependent Types</h2>
+        <p><strong>Feature:</strong> When displaying dependent types based on search results, also show the section headers (h1 elements) that precede the event-headers.</p>
+        <p><strong>Purpose:</strong> Provide better context by showing which category/section the dependent types belong to.</p>
+    </div>
+    
+    <div class="test-result success">
+        <h3>Changes Made to showDependentTypes Function:</h3>
+        <ul>
+            <li><strong>Section Detection:</strong> Added logic to identify parent sections of dependent types using <code>closest('.section')</code></li>
+            <li><strong>Section Header Display:</strong> Automatically show section headers (<code>.section-header</code>) for sections containing dependent types</li>
+            <li><strong>Section Visibility:</strong> Ensure entire sections are visible when they contain dependent types</li>
+            <li><strong>TOC Integration:</strong> Update table of contents to show sections with dependent types</li>
+            <li><strong>Better Logging:</strong> Enhanced logging to track both types and sections being shown</li>
+        </ul>
+    </div>
+    
+    <div class="test-result info">
+        <h3>How It Works Now:</h3>
+        <ol>
+            <li><strong>User performs a search</strong> that filters events</li>
+            <li><strong>collectDependentTypes()</strong> identifies type dependencies from visible events</li>
+            <li><strong>showDependentTypes()</strong> is called with the dependent type IDs</li>
+            <li><strong>For each dependent type found:</strong>
+                <ul>
+                    <li>Show the type element (event-header and event div)</li>
+                    <li>Find the parent section using <code>closest('.section')</code></li>
+                    <li>Add the parent section to the <code>sectionsToShow</code> set</li>
+                </ul>
+            </li>
+            <li><strong>For each section containing dependent types:</strong>
+                <ul>
+                    <li>Show the section header (h1 with class <code>section-header</code>)</li>
+                    <li>Ensure the entire section div is visible</li>
+                    <li>Update the table of contents to show the section</li>
+                </ul>
+            </li>
+            <li><strong>Result:</strong> Users see both the dependent types AND their contextual section headers</li>
+        </ol>
+    </div>
+    
+    <div class="test-result">
+        <h3>Technical Implementation:</h3>
+        <ul>
+            <li><strong>Section Discovery:</strong> Uses <code>typeEl.closest('.section')</code> to find parent sections</li>
+            <li><strong>Deduplication:</strong> Uses a <code>Set</code> to ensure each section is only processed once</li>
+            <li><strong>DOM Manipulation:</strong> Sets <code>style.display = 'block'</code> for both headers and sections</li>
+            <li><strong>TOC Sync:</strong> Removes <code>hidden-toc-section</code> class from navigation links</li>
+            <li><strong>Logging:</strong> Provides detailed console output for debugging</li>
+        </ul>
+    </div>
+    
+    <div class="test-result success">
+        <h3>Benefits:</h3>
+        <ul>
+            <li><strong>Better Context:</strong> Users understand which category dependent types belong to</li>
+            <li><strong>Improved Navigation:</strong> Section headers provide visual structure and anchor points</li>
+            <li><strong>Consistent UX:</strong> Maintains the hierarchical structure of the documentation</li>
+            <li><strong>Search Integration:</strong> Works seamlessly with existing search and filter functionality</li>
+        </ul>
+    </div>
+    
+    <div class="test-result info">
+        <h3>Example Scenario:</h3>
+        <p>When searching for <code>name:*GC*</code>:</p>
+        <ol>
+            <li>GC-related events are shown</li>
+            <li>Dependent types referenced by these events are identified</li>
+            <li>Both the dependent types AND their parent section headers (e.g., "Memory Management", "Runtime Events") are displayed</li>
+            <li>Users see the full context hierarchy instead of isolated type definitions</li>
+        </ol>
+    </div>
+
+    <p><strong>File Modified:</strong> <code>main.html</code> - Enhanced the <code>showDependentTypes</code> function</p>
+    <p><strong>Result:</strong> Dependent types are now displayed with their contextual section headers, providing better organization and navigation.</p>
+</body>
+</html>

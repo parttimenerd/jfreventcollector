@@ -1,0 +1,21 @@
+<div class="examples-section">
+    <ul class="nav nav-tabs" id="{{id}}" role="tablist">
+        {{#examples}}
+            <li class="nav-item" role="presentation">
+                <a class="nav-link {{#first}}active{{/first}}" id="{{id}}-tab"
+                data-bs-toggle="tab" href="#{{id}}{{index}}" role="tab"
+                aria-controls="{{id}}{{index}}" aria-selected="true">{{value.name}}</a>
+            </li>
+        {{/examples}}
+    </ul>
+    <div class="tab-content" id="{{id}}Content">
+        {{#examples}}
+            <div class="tab-pane {{#first}}show active{{/first}}" id="{{id}}{{index}}" role="tabpanel"
+                aria-labelledby="{{id}}-tab">
+                <div class="examples-tab">
+                    {{{value.content}}}
+                </div>
+            </div>
+        {{/examples}}
+    </div>
+<div>
