@@ -36,6 +36,7 @@ so contributing it here still makes sense).
 
 
 ## Usage of the metadata including JAR in Code
+
 Useful when creating your own JFR Event Explorer like tool. The related JAR is called `jfreventcollection.jar`
 in the releases.
 
@@ -57,6 +58,7 @@ java -jar jfreventcollector.jar samples/profile.jfr
 (https://github.com/renaissance-benchmarks/renaissance).
 
 ## Usage of the Event Adder
+
 This adds the events found in the passed JDK source folder.
 
 ```sh
@@ -65,6 +67,7 @@ java -cp jfreventcollector.jar me.bechberger.collector.EventAdderKt <path to met
 ```
 
 ## Usage of the Example Adder
+
 This adds examples from the passed JFR file to the passed metadata file.
 
 ```sh
@@ -73,6 +76,7 @@ java -cp jfreventcollector.jar me.bechberger.collector.ExampleAdderKt <path to m
 ```
 
 ## Usage of the SinceAdder
+
 This adds `jdks` attributes to fields and events based on the passed metadata files.
 
 ```sh
@@ -81,6 +85,7 @@ java -cp jfreventcollector.jar me.bechberger.collector.SinceAdderKt <smallest ve
 ```
 
 ## Usage of the AdditionalDescriptionAdder
+
 This adds additional descriptions to events and fields based on the passed metadata files.
 
 This adds additional descriptions to events and fields based on the passed metadata files.
@@ -109,6 +114,7 @@ See this [blog post](https://mostlynerdless.de/blog/2023/12/20/using-ai-to-creat
 for more information.
 
 ## Usage of the SourceCodeContextAdder
+
 This adds source code that is possibly related to an event to the metadata.
 This includes the path, the line numbers with potential matches and the surrounding code.
 
@@ -119,6 +125,7 @@ java -cp jfreventcollector.jar me.bechberger.collector.SourceCodeContextAdderKt 
 ````
 
 ## Usage of the releaser script
+
 This script helps to build the extended metadata file for every JDK version (starting with JDK11).
 It should be run under the most recent released JDK version to obtain proper JFR examples.
 
@@ -203,9 +210,9 @@ Only run `bin/releaser.py create_jfr` if you have a new JDK version installed.
 
 ## Publishing of the website
 
-The website is built using the [website generator](./website) and is update
+The website is built using the [website generator](./website) and is updated
 on every push to the `main` branch via GitHub Actions.
-It also update every night via a scheduled GitHub Action.
+It is also refreshed every night via a scheduled GitHub Action.
 
 ## Support, Feedback, Contributing
 
@@ -217,11 +224,13 @@ as well as additional contribution information,
 see our [Contribution Guidelines](CONTRIBUTING.md).
 
 ## Troubleshooting
+
 Builds might take longer on newer maven versions due to blocking
 of http resources (and I don't know which).
 Maven 3.6.3 seems to work fine.
 
 ## Security / Disclosure
+
 If you find any bug that may be a security problem, please follow our instructions at
 [in our security policy](https://github.com/SAP/jfrevents/security/policy) on how to report it.
 Please do not create GitHub issues for security-related doubts or problems.
