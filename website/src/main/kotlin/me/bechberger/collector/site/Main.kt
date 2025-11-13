@@ -1007,7 +1007,10 @@ class CreateForwardCommand : Runnable {
             <!DOCTYPE html>
             <html>
             <head>
-                <meta http-equiv="refresh" content="0; URL='$forwardUrl'" />
+              <meta charset="utf-8">
+              <script>
+                location.replace("$forwardUrl" + location.search + location.hash);
+              </script>
             </head>
             </html>
         """.trimIndent()
