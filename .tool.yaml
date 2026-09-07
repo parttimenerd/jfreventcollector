@@ -1,0 +1,21 @@
+tag: ready
+github_url: https://github.com/SAP/jfrevents
+tagline: Reference site listing every JFR event across JDK versions, with field names, types, descriptions,
+  and benchmark-derived examples showing which events fire at what rate. Use it when you are writing
+  JFR tooling and need to know exactly which fields an event has or which events are worth subscribing
+  to.
+tagline_short: Reference site for every JFR event type across JDK versions.
+github_pages: https://sap.github.io/jfrevents/
+when_to_use:
+- You need to know what fields a JFR event has across JDK versions
+- You are writing JFR tooling and need event documentation
+- You want to understand which events are worth subscribing to for a given use case
+- You need to compare event availability between JDK 17, 21, and 24
+when_not_to_use:
+- You need a programmatic API to enumerate events at runtime (use JFR API directly)
+- You need offline access (web-only reference site)
+links:
+- label: Website ↗
+  url: https://sap.github.io/jfrevents/
+no_release: true
+note: Canonical site is at sap.github.io/jfrevents/. Maintained by the SAP SapMachine team.
